@@ -11,17 +11,18 @@ import Foundation
 /// only exists once something's been logged, and disappears again if it's
 /// all cleared.
 struct DayEntry: Codable, Equatable {
-    /// 1 (poor) … 5 (great).
     var mood: Int?
-    /// 1 (drained) … 5 (energised).
     var energy: Int?
     var flow: Flow?
     var symptoms: Set<Symptom> = []
     var notes: String = ""
     
     var isEmpty: Bool {
-        mood == nil && energy == nil && flow == nil && symptoms.isEmpty
-            && notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        mood == nil &&
+        energy == nil &&
+        flow == nil &&
+        symptoms.isEmpty &&
+        notes.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
     
     enum Flow: String, Codable, CaseIterable, Identifiable {
@@ -32,7 +33,16 @@ struct DayEntry: Codable, Equatable {
     }
     
     enum Symptom: String, Codable, CaseIterable, Identifiable {
-        case cramps, headache, bloating, tenderBreasts, fatigue, backPain, acne, nausea, cravings, insomnia
+        case cramps,
+             headache,
+             bloating,
+             tenderBreasts,
+             fatigue,
+             backPain,
+             acne,
+             nausea,
+             cravings,
+             insomnia
         
         var id: String { rawValue }
         
@@ -49,10 +59,19 @@ struct DayEntry: Codable, Equatable {
 /// The five-point scales, with an emoji and a word for each step.
 enum Scale {
     static let mood: [(emoji: String, label: String)] = [
-        ("😞", "Rough"), ("😕", "Low"), ("😐", "Okay"), ("🙂", "Good"), ("😄", "Great"),
+        ("😞", "Rough"),
+        ("😕", "Low"),
+        ("😐", "Okay"),
+        ("🙂", "Good"),
+        ("😄", "Great"),
     ]
+    
     static let energy: [(emoji: String, label: String)] = [
-        ("😴", "Drained"), ("🥱", "Tired"), ("😐", "Steady"), ("🙂", "Lively"), ("⚡️", "Energised"),
+        ("😴", "Drained"),
+        ("🥱", "Tired"),
+        ("😐", "Steady"),
+        ("🙂", "Lively"),
+        ("⚡️", "Energised"),
     ]
 }
 
@@ -94,6 +113,7 @@ final class DayEntryStore {
         change(&entry)
         
         let key = key(for: date)
+        
         if entry.isEmpty {
             entries.removeValue(forKey: key)
         } else {
@@ -108,7 +128,9 @@ final class DayEntryStore {
             let fileURL,
             let data = try? Data(contentsOf: fileURL),
             let decoded = try? JSONDecoder().decode([String: DayEntry].self, from: data)
-        else { return }
+        else {
+            return
+        }
         
         entries = decoded
     }

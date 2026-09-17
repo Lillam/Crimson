@@ -80,6 +80,7 @@ class CycleEngine {
         
         let day = calendar.startOfDay(for: date)
         let anchor = calendar.startOfDay(for: lastPeriodStart)
+        
         guard day >= anchor else {
             return nil
         }
@@ -87,12 +88,17 @@ class CycleEngine {
         // The most recent cycle start on or before `date`: the last logged
         // period, or one of the projected ones after it.
         var cycleStart = anchor
+        
         for start in projectedPeriodStarts(from: stats) {
-            if start > day { break }
+            if start > day {
+                break
+            }
+            
             cycleStart = start
         }
         
         let dayNumber = (calendar.dateComponents([.day], from: cycleStart, to: day).day ?? 0) + 1
+        
         return CyclePosition(
             day: dayNumber,
             cycleLength: stats.averageCycleLength,

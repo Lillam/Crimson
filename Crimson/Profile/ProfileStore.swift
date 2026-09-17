@@ -69,7 +69,9 @@ final class ProfileStore {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         name = defaults.string(forKey: Key.name) ?? ""
-        birthday = defaults.data(forKey: Key.birthday).flatMap { try? JSONDecoder().decode(Birthday.self, from: $0) }
+        birthday = defaults.data(forKey: Key.birthday).flatMap {
+            try? JSONDecoder().decode(Birthday.self, from: $0)
+        }
         hasSeenWelcome = defaults.bool(forKey: Key.hasSeenWelcome)
     }
     
