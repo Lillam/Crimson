@@ -1,0 +1,23 @@
+# macOS
+.DS_Store
+
+# Xcode — per-user state (window layout, breakpoints, last-opened scheme)
+xcuserdata/
+*.xcuserstate
+*.xcuserdatad
+
+# Xcode — build output
+DerivedData/
+build/
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# Swift Package Manager
+.build/
+.swiftpm/
+Package.resolved
+
+# Playgrounds
+timeline.xctimeline
+playground.xcworkspace
