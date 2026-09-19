@@ -13,6 +13,9 @@ struct DayView: View {
     
     @State var selected: Date = Date()
     @State private var draft: PeriodDraft?
+    /// The notes editor's focus. Held here rather than in `DayLogView` so a
+    /// tap anywhere on the page — header included — can dismiss the keyboard.
+    @FocusState private var notesFocused: Bool
     private let calendar = Calendar.current
     private let engine = CycleEngine()
     
@@ -194,24 +197,24 @@ struct DayView: View {
             .background(.red)
             // The day's log, on the white body under the red header.
             ScrollView {
-                VStack(spacing: 10) {
+                VStack {
                     Text(headline.label)
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(.black.opacity(0.8))
                     Text(headline.value)
                         .font(.system(size: 30, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                     Button(action: action.perform) {
                         Text(action.title)
-                            .foregroundColor(.red)
+                            .foregroundColor(.white)
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 20)
-                    .background(.white)
+                    .background(.red)
                     .cornerRadius(20)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(20)
-                .background(.red)
+                .padding(.top, 30)
                 VStack(spacing: 12) {
                     if let position {
                         phaseCard(position)
@@ -220,7 +223,7 @@ struct DayView: View {
                     if isFuture {
                         futureNote
                     } else {
-                        DayLogView(date: selected, isPeriodDay: currentRecord != nil)
+                        DayLogView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
                     }
                 }
                 .padding(20)
@@ -229,7 +232,6 @@ struct DayView: View {
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.red)
         }
         // Fill the screen (like the calendar) so the swipe hit area is the
         // whole page, not just the header.
@@ -240,6 +242,10 @@ struct DayView: View {
         // horizontal swipes.
         .contentShape(Rectangle())
         .simultaneousGesture(swipe)
+        // Tapping any blank part of the page drops the keyboard. Controls
+        // consume their own taps, so this only fires on empty space (and the
+        // scroll view already dismisses on drag).
+        .onTapGesture { notesFocused = false }
         .sensoryFeedback(.selection, trigger: selected)
         .sheet(item: $draft) { draft in
             LogPeriodSheet(draft: draft)
@@ -269,14 +275,14 @@ struct DayView: View {
         }
         .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DayLogView.cardColor)
+        .background(.red)
         .cornerRadius(12)
     }
     
     private var futureNote: some View {
         Text("This day hasn't happened yet — come back to log how it went.")
             .font(.system(size: 13))
-            .foregroundColor(.white.opacity(0.75))
+            .foregroundColor(.black.opacity(0.75))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(15)
             .background(DayLogView.cardColor)

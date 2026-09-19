@@ -13,11 +13,13 @@ struct CrimsonApp: App {
     @State private var store: CycleStore = CycleStore()
     @State private var profile: ProfileStore = ProfileStore()
     @State private var entries: DayEntryStore = DayEntryStore()
+    @State private var stores: Stores = Stores()
     
     var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(router)
+                .environment(stores)
                 .environment(store)
                 .environment(profile)
                 .environment(entries)

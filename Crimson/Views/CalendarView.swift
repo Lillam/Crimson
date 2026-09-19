@@ -7,24 +7,10 @@
 
 import SwiftUI
 
-enum DayMarking {
-    case selected(RangeEdge) // part of the range the user is picking to log
-    case period              // actual logged bleeding day
-    case predicted           // inside the predicted next-period window
-    case none
-    
-    /// Where a day sits inside a selected range, so the band can round its
-    /// outer corners and the end days can get the strong treatment.
-    enum RangeEdge {
-        case single, start, middle, end
-    }
-}
-
 struct CalendarView: View {
     @Environment(Router.self) var router
     @Environment(CycleStore.self) var store
     @Environment(ProfileStore.self) var profile
-    @Environment(DayEntryStore.self) var entries
     
     /// How many months past the current one are loaded. Only ever grows, and
     /// only as the user scrolls down — the calendar never prepends, because
@@ -48,7 +34,6 @@ struct CalendarView: View {
     
     private let calendar = Calendar.current
     private let engine: CycleEngine = CycleEngine()
-    private let columns = Array(repeating: GridItem(.flexible()), count: 7)
     
     /// How many months ahead to load initially, and how many to add each time
     /// the user nears the bottom.
@@ -271,11 +256,11 @@ struct CalendarView: View {
                 VStack(alignment: .leading) {
                     Text(rangeTitle)
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.black)
                         .contentTransition(.numericText())
                     Text(yearTitle)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.white.opacity(0.75))
+                        .foregroundColor(.black.opacity(0.75))
                         .contentTransition(.numericText())
                 }
                 .animation(.snappy(duration: 0.2), value: visibleMonth)
@@ -287,10 +272,10 @@ struct CalendarView: View {
                 Button(action: isSelecting ? cancelSelecting : beginSelecting) {
                     Label(isSelecting ? "Cancel" : "Log period", systemImage: isSelecting ? "xmark" : "plus")
                         .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(isSelecting ? .white : .red)
+                        .foregroundColor(isSelecting ? .red : .white)
                         .padding(.vertical, 10)
                         .padding(.horizontal, 15)
-                        .background(isSelecting ? .white.opacity(0.25) : .white)
+                        .background(isSelecting ? .red.opacity(0.25) : .red)
                         .cornerRadius(20)
                         .contentTransition(.symbolEffect(.replace))
                 }
@@ -305,7 +290,7 @@ struct CalendarView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 10)
                 .padding(.horizontal, 15)
-                .background(.white.opacity(0.2))
+                .background(.red)
                 .cornerRadius(12)
                 .padding(.top, 10)
                 .contentTransition(.opacity)
@@ -315,7 +300,13 @@ struct CalendarView: View {
                 ScrollView {
                     LazyVStack(spacing: 0) {
                         ForEach(months, id: \.self) { month in
-                            monthSection(month, logged: logged, projected: projected)
+                            CalendarMonthSectionView(
+                                month: month,
+                                marking: {
+                                    marking(for: $0, logged: logged, projected: projected)
+                                },
+                                onTap: tapped
+                            )
                         }
                     }
                     .scrollTargetLayout()
@@ -326,12 +317,18 @@ struct CalendarView: View {
                 // from that point the target's offset is exact. Doing this on
                 // appear instead runs before layout and lands anywhere.
                 .onScrollGeometryChange(for: Bool.self, of: { $0.contentSize.height > 0 }) { _, hasContent in
-                    guard hasContent, !hasLanded else { return }
+                    guard hasContent, !hasLanded else {
+                        return
+                    }
+                    
                     // Deferred: scrolling and flipping `hasLanded` inside the
                     // geometry callback would change the geometry again in
                     // the same frame, which SwiftUI flags.
                     DispatchQueue.main.async {
-                        guard !hasLanded else { return }
+                        guard !hasLanded else {
+                            return
+                        }
+                        
                         proxy.scrollTo(thisMonth, anchor: .top)
                         hasLanded = true
                     }
@@ -351,109 +348,12 @@ struct CalendarView: View {
         // Top padding only, so the month list runs under the tab bar.
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .background(.red)
+        .background(.white)
         // Keep the range banded on the calendar while the sheet is up so the
         // user can see what they're confirming; clear it once it goes away.
         .sheet(item: $draft, onDismiss: cancelSelecting) { draft in
             LogPeriodSheet(draft: draft)
         }
-    }
-    
-    /// Six full weeks. Every month grid is padded to this many cells so all
-    /// months are the same height — a lazy stack with uniform rows never has
-    /// to correct its estimates, which would otherwise jolt the scroll.
-    private let cellsPerMonth = 42
-    
-    @ViewBuilder
-    private func monthSection(_ month: Date, logged: Set<Date>, projected: Set<Date>) -> some View {
-        let days = daysIn(in: month)
-        let dates = days + Array(repeating: nil, count: max(cellsPerMonth - days.count, 0))
-
-        VStack {
-            Text(month.formatted(.dateTime.month(.wide)))
-                .foregroundColor(.white)
-
-            LazyVGrid(columns: columns, spacing: 10) {
-                ForEach(Array(weekShort.enumerated()), id: \.offset) { _, symbol in
-                    Text(symbol)
-                        .font(.caption)
-                        .foregroundStyle(.white.opacity(0.75))
-                }
-
-                // Day cells
-                ForEach(Array(dates.enumerated()), id: \.offset) { _, date in
-                    if let date {
-                        dayCell(date, marking: marking(for: date, logged: logged, projected: projected))
-                    } else {
-                        Color.clear.frame(height: 34) // empty leading/trailing cell
-                    }
-                }
-            }
-            .padding()
-        }
-    }
-
-    @ViewBuilder
-    private func dayCell(_ date: Date, marking: DayMarking) -> some View {
-        let isToday = calendar.isDateInToday(date)
-        let isFilled: Bool = switch marking {
-            case .period, .selected(.single), .selected(.start), .selected(.end): true
-            default: false
-        }
-
-        Text(date, format: .dateTime.day())
-            .font(.system(size: 16, weight: .medium))
-            .frame(maxWidth: .infinity, minHeight: 34)
-            .foregroundColor(isFilled ? .red : .white)
-            .background {
-                switch marking {
-                case .selected(let edge):
-                    // a translucent band runs through the whole range, with
-                    // the two end days filled like a logged day.
-                    selectionBand(edge)
-                    if edge != .middle {
-                        Circle().fill(.white)
-                    }
-                case .period:
-                    // logged period days get the strong filled treatment
-                    Circle().fill(.white)
-                case .predicted:
-                    // projected days are outlined with a dotted ring, not filled
-                    Circle().strokeBorder(
-                        .white.opacity(0.9),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
-                    )
-                case .none:
-                    if isToday {
-                        Circle().strokeBorder(.white, lineWidth: 1.5)
-                    }
-                }
-            }
-            // A small dot marks days with a mood/symptom/notes entry.
-            .overlay(alignment: .bottom) {
-                if entries.hasEntry(on: date) {
-                    Circle()
-                        .fill(isFilled ? .red : .white)
-                        .frame(width: 4, height: 4)
-                        .offset(y: -3)
-                }
-            }
-            .contentShape(Rectangle())
-            .onTapGesture { tapped(date) }
-    }
-    
-    /// The band behind a selected range. It reaches half a column gap either
-    /// side so neighbouring cells join up, and stops at the middle of the
-    /// start/end cells so the range visibly begins and ends on their circles.
-    @ViewBuilder
-    private func selectionBand(_ edge: DayMarking.RangeEdge) -> some View {
-        let gap: CGFloat = 5 // half the grid's column spacing
-        
-        HStack(spacing: 0) {
-            Color.white.opacity(edge == .start || edge == .single ? 0 : 0.3)
-            Color.white.opacity(edge == .end || edge == .single ? 0 : 0.3)
-        }
-        .padding(.horizontal, -gap)
     }
 }
 

@@ -12,15 +12,15 @@ import SwiftUI
 /// through to the store, so there's no save button.
 struct DayLogView: View {
     /// The card grey, shared with the day page's other cards.
-    static let cardColor = Color(.white.opacity(0.05))
+    static let cardColor = Color(.white)
     
     @Environment(DayEntryStore.self) var entries
     let date: Date
     /// Whether this is a day the user has logged bleeding on — flow is only
     /// asked about then (plus spotting on any day).
     let isPeriodDay: Bool
-    
-    @FocusState private var notesFocused: Bool
+    /// Owned by the page so a tap anywhere on it can dismiss the keyboard.
+    var notesFocused: FocusState<Bool>.Binding
     
     private var entry: DayEntry {
         entries.entry(for: date)
@@ -56,13 +56,14 @@ struct DayLogView: View {
                     ForEach(1...5, id: \.self) { value in
                         let isSelected = selection.wrappedValue == value
                         Button {
+                            notesFocused.wrappedValue = false
                             // Tapping the current choice clears it.
                             selection.wrappedValue = isSelected ? nil : value
                         } label: {
                             Text(scale[value - 1].emoji)
                                 .font(.system(size: isSelected ? 30 : 24))
                                 .frame(width: 44, height: 44)
-                                .background(isSelected ? .white : .red.opacity(0.15), in: Circle())
+                                .background(isSelected ? .red : .black.opacity(0.15), in: Circle())
                                 .opacity(selection.wrappedValue == nil || isSelected ? 1 : 0.45)
                         }
                         .frame(maxWidth: .infinity)
@@ -84,15 +85,17 @@ struct DayLogView: View {
                 HStack(spacing: 6) {
                     ForEach(DayEntry.Flow.allCases) { flow in
                         chip(flow.title, isSelected: entry.flow == flow) {
-                            entries.update(for: date) { $0.flow = $0.flow == flow ? nil : flow }
+                            entries.update(for: date) {
+                                $0.flow = $0.flow == flow ? nil : flow
+                            }
                         }
                     }
                 }
                 
-                if !isPeriodDay && entry.flow != nil && entry.flow != .spotting {
+                if !isPeriodDay && entry.flow != nil {
                     Text("This day isn't inside a logged period — use Log Period above if it should be.")
                         .font(.system(size: 12))
-                        .foregroundColor(.white.opacity(0.75))
+                        .foregroundColor(.black.opacity(0.75))
                 }
             }
         }
@@ -130,29 +133,29 @@ struct DayLogView: View {
                 cardTitle("Notes", detail: nil)
                 
                 TextEditor(text: field(\.notes))
-                    .focused($notesFocused)
+                    .focused(notesFocused)
                     .scrollContentBackground(.hidden)
-                    .foregroundColor(.white)
-                    .tint(.red)
+                    .foregroundColor(.black.opacity(0.75))
+                    .tint(.black)
                     .font(.system(size: 15))
                     .frame(minHeight: 90)
                     .overlay(alignment: .topLeading) {
                         if entry.notes.isEmpty {
                             Text("How was your day?")
                                 .font(.system(size: 15))
-                                .foregroundColor(.white.opacity(0.75))
+                                .foregroundColor(.black.opacity(0.75))
                                 .padding(.top, 8)
                                 .padding(.leading, 5)
                                 .allowsHitTesting(false)
                         }
                     }
                 
-                if notesFocused {
+                if notesFocused.wrappedValue {
                     HStack {
                         Spacer()
-                        Button("Done") { notesFocused = false }
+                        Button("Done") { notesFocused.wrappedValue = false }
                             .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(.black)
                     }
                 }
             }
@@ -166,12 +169,12 @@ struct DayLogView: View {
         HStack {
             Text(title)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.white)
+                .foregroundColor(.black)
             Spacer()
             if let detail {
                 Text(detail)
                     .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.75))
+                    .foregroundColor(.black.opacity(0.75))
                     .contentTransition(.numericText())
             }
         }
@@ -179,23 +182,26 @@ struct DayLogView: View {
     
     @ViewBuilder
     private func chip(_ title: String, isSelected: Bool, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
+        Button {
+            notesFocused.wrappedValue = false
+            action()
+        } label: {
             Text(title)
                 .font(.system(size: 13, weight: .semibold))
-                .foregroundColor(isSelected ? .red : .white)
+                .foregroundColor(isSelected ? .white : .black)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)
                 .padding(.vertical, 8)
                 .padding(.horizontal, 12)
                 .frame(maxWidth: .infinity)
-                .background(isSelected ? .white : .white.opacity(0.1), in: Capsule())
+                .background(isSelected ? .red : .black.opacity(0.15), in: Capsule())
         }
     }
     
     @ViewBuilder
     private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
         content()
-            .padding(15)
+            .padding(.vertical, 15)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(Self.cardColor)
             .cornerRadius(12)
@@ -203,10 +209,11 @@ struct DayLogView: View {
 }
 
 #Preview {
+    @Previewable @FocusState var notesFocused: Bool
+    
     ScrollView {
-        DayLogView(date: Date(), isPeriodDay: true)
+        DayLogView(date: Date(), isPeriodDay: true, notesFocused: $notesFocused)
             .padding(20)
     }
-    .background(.red)
     .environment(DayEntryStore(fileURL: nil))
 }

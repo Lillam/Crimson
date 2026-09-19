@@ -68,9 +68,6 @@ struct AppView: View {
             .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
             .padding(.horizontal, 20)
             .padding(.bottom, -10)
-            // The keyboard covers the bar, but it's translucent, so fade the
-            // bar out too rather than let it bleed through as a smudge.
-//            .opacity(keyboardOverlap > 0 ? 0 : 1)
             .allowsHitTesting(keyboardOverlap == 0)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

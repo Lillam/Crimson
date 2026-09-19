@@ -55,7 +55,9 @@ struct InsightsView: View {
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
-                    if hasEnoughData {
+                    if !hasEnoughData {
+                        emptyState
+                    } else {
                         if let position {
                             currentCycleCard(position)
                         }
@@ -73,8 +75,6 @@ struct InsightsView: View {
                             average: store.stats.averageBleedLength
                         )
                         recentPeriods
-                    } else {
-                        emptyState
                     }
                 }
                 .padding(.bottom, 80) // scroll clear of the floating tab bar
@@ -270,7 +270,7 @@ struct InsightsView: View {
                 }
                 
                 if recent.count < 2 {
-                    Text("Needs a couple more periods to show a trend.")
+                    Text("A trend can't be found until at least 2 cycles tracked, 1 cycle = 2 periods, 3 periods = 2 cycles, 4 periods = 3 cycles and so forth.")
                         .font(.system(size: 13))
                         .foregroundColor(.white.opacity(0.6))
                         .frame(maxWidth: .infinity, minHeight: 120, alignment: .center)

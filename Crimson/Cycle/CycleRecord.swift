@@ -8,11 +8,14 @@
 import Foundation
 
 struct CycleRecord: Identifiable, Hashable, Codable {
+    let calendar: Calendar
     let id: UUID
     var startDate: Date
     var endDate: Date?
     
     init(id: UUID = UUID(), startDate: Date, endDate: Date? = nil) {
+        self.calendar = Calendar.current
+        
         self.id = id
         self.startDate = startDate
         self.endDate = endDate
@@ -30,19 +33,17 @@ struct CycleRecord: Identifiable, Hashable, Codable {
     
     /// Whether `date` falls on one of this record's days.
     func contains(_ date: Date) -> Bool {
-        let calendar = Calendar.current
         let day = calendar.startOfDay(for: date)
-        return day >= calendar.startOfDay(for: startDate) && day <= calendar.startOfDay(for: effectiveEndDate)
+        
+        return day >= calendar.startOfDay(for: startDate) &&
+               day <= calendar.startOfDay(for: effectiveEndDate)
     }
     
     var bleedLength: Int? {
         guard let endDate else {
             return nil
         }
-        
-        // map over the days and get the total number of days that the cycle
-        // had lasted for. Inclusive of both ends, so 11th → 15th is 5 days.
-        let calendar = Calendar.current
+                
         return calendar.dateComponents(
             [.day],
             from: calendar.startOfDay(for: startDate),
