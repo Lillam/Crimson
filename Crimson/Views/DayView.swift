@@ -13,7 +13,7 @@ struct DayView: View {
     
     @State var selected: Date = Date()
     @State private var draft: PeriodDraft?
-    /// The notes editor's focus. Held here rather than in `DayLogView` so a
+    /// The notes editor's focus. Held here rather than in `DayLogFormView` so a
     /// tap anywhere on the page — header included — can dismiss the keyboard.
     @FocusState private var notesFocused: Bool
     private let calendar = Calendar.current
@@ -96,7 +96,14 @@ struct DayView: View {
     /// are recomputed from the store every time the view loads.
     private var headline: (label: String, value: String) {
         if let record = currentRecord {
-            let day = (calendar.dateComponents([.day], from: calendar.startOfDay(for: record.startDate), to: calendar.startOfDay(for: selected)).day ?? 0) + 1
+            let day = (
+                calendar.dateComponents(
+                    [.day],
+                    from: calendar.startOfDay(for: record.startDate),
+                    to: calendar.startOfDay(for: selected)
+                ).day ?? 0
+            ) + 1
+            
             return ("Period Day", "Day \(day)")
         }
         
@@ -105,7 +112,15 @@ struct DayView: View {
         }
         
         switch days {
-        case 0:  return ("Period Started", "Today")
+        case 0:
+            // `days` is measured from the selected day, so a zero only means
+            // "today" when today is what's selected. On any other day the
+            // projection lands on that day, and the tense has to follow.
+            switch calendar.compare(selected, to: Date(), toGranularity: .day) {
+            case .orderedDescending: return ("Period Starts", "This Day")
+            case .orderedAscending:  return ("Period Was Due", "This Day")
+            case .orderedSame:       return ("Period Starts", "Today")
+            }
         case 1:  return ("Period Starts in", "1 Day")
         default: return ("Period Starts in", "\(days) Days")
         }
@@ -195,26 +210,27 @@ struct DayView: View {
             .padding(.vertical, 20)
             .padding(.horizontal, 20)
             .background(.red)
-            // The day's log, on the white body under the red header.
             ScrollView {
                 VStack {
                     Text(headline.label)
-                        .foregroundColor(.black.opacity(0.8))
+                        .font(.system(size: 30))
+                        .foregroundColor(.white.opacity(0.5))
                     Text(headline.value)
-                        .font(.system(size: 30, weight: .bold))
-                        .foregroundColor(.black)
+                        .font(.system(size: 40, weight: .bold))
+                        .foregroundColor(.white)
                     Button(action: action.perform) {
                         Text(action.title)
-                            .foregroundColor(.white)
+                            .foregroundColor(.red)
                     }
                     .padding(.vertical, 10)
                     .padding(.horizontal, 20)
-                    .background(.red)
+                    .background(.white)
                     .cornerRadius(20)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(20)
-                .padding(.top, 30)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, 20)
+                .padding(.bottom, 40)
+                .background(.red)
                 VStack(spacing: 12) {
                     if let position {
                         phaseCard(position)
@@ -223,20 +239,31 @@ struct DayView: View {
                     if isFuture {
                         futureNote
                     } else {
-                        DayLogView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
+                        DayLogFormView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
                     }
                 }
                 .padding(20)
                 .padding(.bottom, 80) // scroll clear of the floating tab bar
+                .background(.white)
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            // A bounce reveals whatever sits behind the scroll view, so that
+            // backdrop is split down the middle: overscrolling at the top
+            // carries the red header on, while the bottom bounce stays white
+            // like the log above it. Neither half is ever seen otherwise —
+            // the content's own backgrounds cover it.
+            .background {
+                VStack(spacing: 0) {
+                    Color.red
+                    Color.white
+                }
+            }
         }
         // Fill the screen (like the calendar) so the swipe hit area is the
         // whole page, not just the header.
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .background(.white)
         // Make the whole page swipeable. Simultaneous so the vertical scroll
         // underneath still works; the gesture only acts on clearly
         // horizontal swipes.
@@ -285,7 +312,7 @@ struct DayView: View {
             .foregroundColor(.black.opacity(0.75))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(15)
-            .background(DayLogView.cardColor)
+            .background(DayLogFormView.cardColor)
             .cornerRadius(12)
     }
 }

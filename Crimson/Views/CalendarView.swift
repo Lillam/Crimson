@@ -11,11 +11,13 @@ struct CalendarView: View {
     @Environment(Router.self) var router
     @Environment(CycleStore.self) var store
     @Environment(ProfileStore.self) var profile
+    @Environment(SettingsStore.self) var settings
     
-    /// How many months past the current one are loaded. Only ever grows, and
-    /// only as the user scrolls down — the calendar never prepends, because
+    /// How many months past the current one have been loaded. Only ever grows,
+    /// and only as the user scrolls down — the calendar never prepends, because
     /// inserting content above the visible month shifts everything on screen.
-    @State private var futureMonths: Int
+    /// What's actually shown is `futureMonths`, which clamps this to the range.
+    @State private var loadedFutureMonths: Int
     /// The topmost month that's at least half on screen. Observed from the
     /// scroll view (never written back to it), and drives the header.
     @State private var visibleMonth: Date?
@@ -41,32 +43,52 @@ struct CalendarView: View {
     /// Load more once the visible month is within this many months of the end,
     /// so the new content is in place before the user reaches it.
     private let edgeBuffer = 3
-    /// How far back the calendar reaches. Effectively unlimited for a period
-    /// tracker, and a lazy stack only builds the months on screen, so the
-    /// extra range is free.
-    private let historyYears = 20
+    /// How far back an unbounded calendar reaches. Something has to anchor the
+    /// top of the list, and a lazy stack only builds the months on screen, so
+    /// the extra range costs nothing until it's scrolled to.
+    private let unboundedHistoryYears = 20
     
     /// The first of the current month.
     private let thisMonth: Date
-    /// The oldest month in the scroller. Fixed for the life of the view: the
-    /// start of the list must never move, because inserting months above the
-    /// visible one makes the lazy stack lose its place (it resets to the top).
-    private let firstMonth: Date
     
     init() {
         let calendar = Calendar.current
         let thisMonth = calendar.dateInterval(of: .month, for: Date())?.start ?? Date()
         
         self.thisMonth = thisMonth
-        firstMonth = calendar.date(byAdding: .year, value: -historyYears, to: thisMonth) ?? thisMonth
-        _futureMonths = State(initialValue: monthBatch)
+        _loadedFutureMonths = State(initialValue: monthBatch)
         _visibleMonth = State(initialValue: thisMonth)
+    }
+    
+    /// Months either side of the current one that the user's range allows, or
+    /// nil when they've asked for no limit.
+    private var windowMonths: Int? {
+        settings.calendarRange.months
+    }
+    
+    /// How many months of history the scroller holds. Fixed while the calendar
+    /// is on screen: the start of the list must never move, because inserting
+    /// months above the visible one makes the lazy stack lose its place (it
+    /// resets to the top). Changing the range in settings rebuilds the list and
+    /// re-lands it on the current month.
+    private var historyMonths: Int {
+        windowMonths ?? unboundedHistoryYears * 12
+    }
+    
+    /// How many months ahead are shown: what's been loaded, capped by the range.
+    private var futureMonths: Int {
+        min(loadedFutureMonths, windowMonths ?? .max)
+    }
+    
+    /// The oldest month in the scroller.
+    private var firstMonth: Date {
+        calendar.date(byAdding: .month, value: -historyMonths, to: thisMonth) ?? thisMonth
     }
     
     /// Every month currently in the scroller, oldest → newest, each normalised
     /// to the first of the month.
     private var months: [Date] {
-        let count = (calendar.dateComponents([.month], from: firstMonth, to: thisMonth).month ?? 0) + futureMonths + 1
+        let count = historyMonths + futureMonths + 1
         return (0..<count).compactMap {
             calendar.date(byAdding: .month, value: $0, to: firstMonth)
         }
@@ -205,7 +227,8 @@ struct CalendarView: View {
     }
     
     /// Loads another batch of future months once the visible month gets close
-    /// to the bottom of what's loaded.
+    /// to the bottom of what's loaded. A bounded calendar simply stops: the
+    /// range is the end of the list, not a pause in the loading.
     private func loadMoreIfNeeded() {
         guard
             let visible = visibleMonth,
@@ -215,7 +238,16 @@ struct CalendarView: View {
             return
         }
         
-        futureMonths += monthBatch
+        loadedFutureMonths = min(loadedFutureMonths + monthBatch, windowMonths ?? .max)
+    }
+    
+    /// Rebuilds the scroller around the current month after the range changes.
+    /// Both ends of the list have moved, so the lazy stack's idea of where it
+    /// is no longer means anything and it has to be put back deliberately.
+    private func rangeChanged(proxy: ScrollViewProxy) {
+        loadedFutureMonths = monthBatch
+        visibleMonth = thisMonth
+        proxy.scrollTo(thisMonth, anchor: .top)
     }
     
     /// The three-month span headed by the visible month: the month at the top
@@ -252,47 +284,49 @@ struct CalendarView: View {
         let projected = projectedDays
         
         VStack {
-            HStack(alignment: .top) {
-                VStack(alignment: .leading) {
-                    Text(rangeTitle)
-                        .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
-                        .contentTransition(.numericText())
-                    Text(yearTitle)
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black.opacity(0.75))
-                        .contentTransition(.numericText())
-                }
-                .animation(.snappy(duration: 0.2), value: visibleMonth)
-                
-                Spacer()
-                
-                // The same button swaps between the two modes in place, so the
-                // header never changes height.
-                Button(action: isSelecting ? cancelSelecting : beginSelecting) {
-                    Label(isSelecting ? "Cancel" : "Log period", systemImage: isSelecting ? "xmark" : "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundColor(isSelecting ? .red : .white)
-                        .padding(.vertical, 10)
-                        .padding(.horizontal, 15)
-                        .background(isSelecting ? .red.opacity(0.25) : .red)
-                        .cornerRadius(20)
-                        .contentTransition(.symbolEffect(.replace))
+            VStack {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading) {
+                        Text(rangeTitle)
+                            .font(.system(size: 24, weight: .bold))
+                            .foregroundColor(.black)
+                            .contentTransition(.numericText())
+                        Text(yearTitle)
+                            .font(.system(size: 16, weight: .bold))
+                            .foregroundColor(.black.opacity(0.75))
+                            .contentTransition(.numericText())
+                    }
+                    .animation(.snappy(duration: 0.2), value: visibleMonth)
+                    
+                    Spacer()
+                    
+                    // The same button swaps between the two modes in place, so the
+                    // header never changes height.
+                    Button(action: isSelecting ? cancelSelecting : beginSelecting) {
+                        Label(isSelecting ? "Cancel" : "Log period", systemImage: isSelecting ? "xmark" : "plus")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundColor(isSelecting ? .red : .white)
+                            .padding(.vertical, 10)
+                            .padding(.horizontal, 15)
+                            .background(isSelecting ? .red.opacity(0.25) : .red)
+                            .cornerRadius(20)
+                            .contentTransition(.symbolEffect(.replace))
+                    }
                 }
             }
+            .padding([.top, .horizontal], 20)
+            .padding(.bottom, 10)
             
             // A permanent one-line status slot. Swapping its text rather than
             // inserting a banner keeps the scroll view's frame fixed — a scroll
             // view that resizes mid-scroll loses its place.
             Text(isSelecting ? selectionHint : idleStatus)
                 .font(.system(size: 14, weight: .medium))
-                .foregroundColor(.white.opacity(isSelecting ? 1 : 0.75))
+                .foregroundColor(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.vertical, 10)
-                .padding(.horizontal, 15)
+                .padding(.horizontal, 20)
                 .background(.red)
-                .cornerRadius(12)
-                .padding(.top, 10)
                 .contentTransition(.opacity)
                 .animation(.snappy(duration: 0.2), value: selectionStart)
             
@@ -341,13 +375,13 @@ struct CalendarView: View {
                 }
                 .scrollIndicators(.hidden)
                 .onChange(of: visibleMonth, loadMoreIfNeeded)
+                .onChange(of: settings.calendarRange) {
+                    rangeChanged(proxy: proxy)
+                }
             }
-            .padding(.top, 10)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Top padding only, so the month list runs under the tab bar.
-        .padding(.top, 20)
-        .padding(.horizontal, 20)
         .background(.white)
         // Keep the range banded on the calendar while the sheet is up so the
         // user can see what they're confirming; clear it once it goes away.
@@ -362,5 +396,6 @@ struct CalendarView: View {
         .environment(Router())
         .environment(CycleStore())
         .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
+        .environment(SettingsStore(defaults: UserDefaults(suiteName: "preview")!))
         .environment(DayEntryStore(fileURL: nil))
 }

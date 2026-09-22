@@ -88,12 +88,14 @@ struct AppView: View {
         }
         .ignoresSafeArea(.keyboard)
         .background(Color.white.ignoresSafeArea())
-        // Full screen the welcome view so it can't be swiped away... this
-        // will only disappear upon the user clicking skip or finishing
-        // The welcome form. This can be brought back from the settings
-        // page on demand.
-        .fullScreenCover(isPresented: $profile.isWelcomePresented) {
-            WelcomeView()
+        // First run only: a sheet, like the donate page, so it can be swiped
+        // away as well as skipped or filled in. However it's closed, the
+        // welcome counts as seen — `onDismiss` catches the swipe, which the
+        // buttons' own `completeWelcome()` has already handled. Editing the
+        // profile later presents the same sheet from Settings instead.
+        .sheet(isPresented: $profile.isWelcomePresented, onDismiss: profile.completeWelcome) {
+            WelcomeSheetView()
+                .presentationDragIndicator(.visible)
         }
         .onAppear(perform: profile.presentWelcomeIfNeeded)
     }
@@ -104,5 +106,6 @@ struct AppView: View {
         .environment(Router())
         .environment(CycleStore())
         .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
+        .environment(SettingsStore(defaults: UserDefaults(suiteName: "preview")!))
         .environment(DayEntryStore(fileURL: nil))
 }

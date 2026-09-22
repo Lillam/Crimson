@@ -46,7 +46,7 @@ struct CalendarMonthSectionView: View {
                 }
             }
         }
-        .padding()
+        .padding([.horizontal, .bottom])
     }
 }
 

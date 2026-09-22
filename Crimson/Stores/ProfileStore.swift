@@ -61,9 +61,9 @@ final class ProfileStore {
         didSet { defaults.set(hasSeenWelcome, forKey: Key.hasSeenWelcome) }
     }
     
-    /// Not persisted: whether the welcome is on screen right now. Kept apart
-    /// from `hasSeenWelcome` so "show it next launch" (delete profile) and
-    /// "show it now" (edit profile) can both exist.
+    /// Not persisted: whether the first-run welcome is on screen right now.
+    /// Only the app view uses this — editing the profile later presents the
+    /// same sheet from Settings, off that page's own state.
     var isWelcomePresented = false
     
     init(defaults: UserDefaults = .standard) {
@@ -88,12 +88,6 @@ final class ProfileStore {
     /// Called once when the app view first appears.
     func presentWelcomeIfNeeded() {
         isWelcomePresented = !hasSeenWelcome
-    }
-    
-    /// Brings the welcome flow up straight away, prefilled with the current
-    /// profile — this is how the profile gets edited.
-    func showWelcomeAgain() {
-        isWelcomePresented = true
     }
     
     /// Finishing or skipping the welcome.
