@@ -283,35 +283,33 @@ struct CalendarView: View {
         let logged = loggedDays
         let projected = projectedDays
         
-        VStack {
-            VStack {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading) {
-                        Text(rangeTitle)
-                            .font(.system(size: 24, weight: .bold))
-                            .foregroundColor(.black)
-                            .contentTransition(.numericText())
-                        Text(yearTitle)
-                            .font(.system(size: 16, weight: .bold))
-                            .foregroundColor(.black.opacity(0.75))
-                            .contentTransition(.numericText())
-                    }
-                    .animation(.snappy(duration: 0.2), value: visibleMonth)
-                    
-                    Spacer()
-                    
-                    // The same button swaps between the two modes in place, so the
-                    // header never changes height.
-                    Button(action: isSelecting ? cancelSelecting : beginSelecting) {
-                        Label(isSelecting ? "Cancel" : "Log period", systemImage: isSelecting ? "xmark" : "plus")
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundColor(isSelecting ? .red : .white)
-                            .padding(.vertical, 10)
-                            .padding(.horizontal, 15)
-                            .background(isSelecting ? .red.opacity(0.25) : .red)
-                            .cornerRadius(20)
-                            .contentTransition(.symbolEffect(.replace))
-                    }
+        VStack(spacing: 0) {
+            HStack(alignment: .top) {
+                VStack(alignment: .leading) {
+                    Text(rangeTitle)
+                        .font(.system(size: 24, weight: .bold))
+                        .foregroundColor(.black)
+                        .contentTransition(.numericText())
+                    Text(yearTitle)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundColor(.black.opacity(0.75))
+                        .contentTransition(.numericText())
+                }
+                .animation(.snappy(duration: 0.2), value: visibleMonth)
+                
+                Spacer()
+                
+                // The same button swaps between the two modes in place, so the
+                // header never changes height.
+                Button(action: isSelecting ? cancelSelecting : beginSelecting) {
+                    Label(isSelecting ? "Cancel" : "Log period", systemImage: isSelecting ? "xmark" : "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                        .foregroundColor(isSelecting ? .red : .white)
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 15)
+                        .background(isSelecting ? .red.opacity(0.25) : .red)
+                        .cornerRadius(20)
+                        .contentTransition(.symbolEffect(.replace))
                 }
             }
             .padding([.top, .horizontal], 20)
@@ -382,7 +380,6 @@ struct CalendarView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         // Top padding only, so the month list runs under the tab bar.
-        .background(.white)
         // Keep the range banded on the calendar while the sheet is up so the
         // user can see what they're confirming; clear it once it goes away.
         .sheet(item: $draft, onDismiss: cancelSelecting) { draft in

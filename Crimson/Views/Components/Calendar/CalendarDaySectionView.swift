@@ -82,7 +82,7 @@ struct CalendarDaySectionView: View {
             .overlay(alignment: .bottom) {
                 if entries.hasEntry(on: date) {
                     Circle()
-                        .fill(isFilled ? .red : .white)
+                        .fill(isFilled ? .white : .red)
                         .frame(width: 4, height: 4)
                         .offset(y: -3)
                 }

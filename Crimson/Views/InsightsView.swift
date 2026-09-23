@@ -70,6 +70,7 @@ struct InsightsView: View {
                         RecentPeriodList()
                     }
                 }
+                .padding(.bottom, 70)
             }
         }
         .scrollIndicators(.hidden)
@@ -78,7 +79,6 @@ struct InsightsView: View {
         // so it extends under it (and the tab bar) rather than being clipped.
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .padding(.bottom, 70)
         .background(.white)
     }
 }

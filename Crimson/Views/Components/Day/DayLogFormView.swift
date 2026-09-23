@@ -11,6 +11,7 @@ import SwiftUI
 /// and anything they want to write down. Every control writes straight
 /// through to the store, so there's no save button.
 struct DayLogFormView: View {
+    @Environment(DayEntryStore.self) var entries
     /// The card colour, shared with the day page's other cards. White on a
     /// white page, so the cards are drawn with a hairline and a soft shadow
     /// rather than a fill — see `card(_:)`.
@@ -18,8 +19,7 @@ struct DayLogFormView: View {
     /// Shared by the flow and symptom grids: as many chips per row as fit,
     /// which is two on a phone.
     private static let chipColumns = [GridItem(.adaptive(minimum: 140), spacing: 6)]
-    
-    @Environment(DayEntryStore.self) var entries
+        
     let date: Date
     /// Whether this is a day the user has logged bleeding on — flow is only
     /// asked about then (plus spotting on any day).
@@ -59,12 +59,12 @@ struct DayLogFormView: View {
     private func scaleCard(_ title: String, icon: String, scale: [(emoji: String, label: String)], selection: Binding<Int?>) -> some View {
         let chosen = selection.wrappedValue
         
-        card {
+        CardView {
             VStack(alignment: .leading, spacing: 14) {
-                cardTitle(
-                    title,
+                CardViewTitle(
+                    title: title,
                     icon: icon,
-                    tint: chosen.map { Scale.tint(step: $0) } ?? .red,
+                    tint: chosen.map { Scale.tint(step: $0)} ?? .red,
                     detail: chosen.map { scale[$0 - 1].label },
                     detailTint: chosen.map { Scale.tint(step: $0) }
                 )
@@ -118,19 +118,13 @@ struct DayLogFormView: View {
     // MARK: - Flow
     
     private var flowCard: some View {
-        card {
+        CardView {
             VStack(alignment: .leading, spacing: 12) {
-                cardTitle(
-                    "Flow",
-                    icon: "drop.fill",
-                    tint: entry.flow?.tint ?? .red,
-                    detail: entry.flow?.title,
-                    detailTint: entry.flow?.tint
-                )
+                CardViewTitle(title: "Flow", icon: "drop.fill", tint: entry.flow?.tint ?? .red, detail: entry.flow?.title, detailTint: entry.flow?.tint)
                 
                 // The same grid as the symptoms below: four across would
                 // squeeze the longer words out now the discs take a slice.
-                LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 6) {
+                LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 10) {
                     ForEach(DayEntry.Flow.allCases) { flow in
                         chip(flow.title, icon: flow.icon, tint: flow.tint, isSelected: entry.flow == flow) {
                             entries.update(for: date) {
@@ -151,17 +145,11 @@ struct DayLogFormView: View {
     // MARK: - Symptoms
     
     private var symptomsCard: some View {
-        card {
+        CardView {
             VStack(alignment: .leading, spacing: 12) {
-                cardTitle(
-                    "Symptoms",
-                    icon: "cross.case.fill",
-                    tint: .red,
-                    detail: entry.symptoms.isEmpty ? nil : "\(entry.symptoms.count)",
-                    detailTint: .red
-                )
+                CardViewTitle(title: "Symptoms", icon: "cross.case.fill", tint: .red, detail: entry.symptoms.isEmpty ? nil : "\(entry.symptoms.count)", detailTint: .red)
                 
-                LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 6) {
+                LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 10) {
                     ForEach(DayEntry.Symptom.allCases) { symptom in
                         chip(symptom.title, icon: symptom.icon, tint: symptom.tint, isSelected: entry.symptoms.contains(symptom)) {
                             entries.update(for: date) {
@@ -182,15 +170,9 @@ struct DayLogFormView: View {
     // MARK: - Notes
     
     private var notesCard: some View {
-        card {
+        CardView {
             VStack(alignment: .leading, spacing: 10) {
-                cardTitle(
-                    "Notes",
-                    icon: "square.and.pencil",
-                    tint: .red,
-                    detail: nil,
-                    detailTint: nil
-                )
+                CardViewTitle(title: "Notes", icon: "square.and.pencil", tint: .red, detail: nil, detailTint: nil)
                 
                 TextEditor(text: field(\.notes))
                     .focused(notesFocused)
@@ -314,21 +296,6 @@ struct DayLogFormView: View {
                 .font(.system(size: 12))
                 .foregroundColor(.black.opacity(0.7))
         }
-    }
-    
-    /// Cards are white on a white page, so they're separated by a hairline
-    /// and a soft shadow rather than a fill.
-    @ViewBuilder
-    private func card<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .padding(15)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Self.cardColor, in: RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(.black.opacity(0.07), lineWidth: 1)
-            }
-            .shadow(color: .black.opacity(0.06), radius: 10, y: 4)
     }
 }
 

@@ -7,8 +7,6 @@
 
 import SwiftUI
 
-/// One month of the calendar: a title, the weekday header row, and a 6×7
-/// grid of day cells padded so every month is the same height.
 struct CalendarMonthSectionView: View {
     /// The first of the month to render.
     let month: Date
@@ -41,7 +39,8 @@ struct CalendarMonthSectionView: View {
                             onTap(date)
                         }
                     } else {
-                        Color.clear.frame(height: 34) // empty leading/trailing cell
+                        // empty leading/trailing cell
+                        Color.clear.frame(height: 34)
                     }
                 }
             }

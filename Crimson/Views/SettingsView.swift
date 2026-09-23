@@ -150,13 +150,13 @@ struct SettingsView: View {
                     .cornerRadius(12)
                 }
                 .frame(maxWidth: .infinity, alignment: .top)
+                .padding(.bottom, 70)
             }
             .scrollIndicators(.hidden)
             .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         }
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .padding(.bottom, 70)
         .background(.white)
         .sheet(isPresented: $editingProfile) {
             WelcomeSheetView()
