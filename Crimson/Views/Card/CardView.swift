@@ -18,10 +18,14 @@ struct CardView<Content: View>: View {
         content
             .padding(15)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.white, in: RoundedRectangle(cornerRadius: 14))
-            .overlay {
-                RoundedRectangle(cornerRadius: 14)
-                    .stroke(.black.opacity(0.07), lineWidth: 1)
-            }
+            .background(AppColor.card, in: RoundedRectangle(cornerRadius: 14))
+            .surface(RoundedRectangle(cornerRadius: 14))
     }
+}
+
+#Preview {
+    CardView {
+        Text("Hi")
+    }
+    .padding(20)
 }

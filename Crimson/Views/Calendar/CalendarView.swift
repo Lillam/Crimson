@@ -311,11 +311,11 @@ struct CalendarView: View {
                 VStack(alignment: .leading) {
                     Text(rangeTitle)
                         .font(.system(size: 24, weight: .bold))
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColor.ink)
                         .contentTransition(.numericText())
                     Text(yearTitle)
                         .font(.system(size: 16, weight: .bold))
-                        .foregroundColor(.black.opacity(0.75))
+                        .foregroundColor(AppColor.ink.opacity(0.75))
                         .contentTransition(.numericText())
                 }
                 .animation(.snappy(duration: 0.2), value: visibleMonth)

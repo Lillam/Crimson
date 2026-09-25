@@ -37,7 +37,7 @@ struct CurrentCyclePhaseMetreView: View {
                         }
                         if isLate {
                             Capsule()
-                                .fill(.white)
+                                .fill(AppColor.card)
                                 .frame(width: span(position.daysLate))
                         }
                     }
@@ -47,7 +47,7 @@ struct CurrentCyclePhaseMetreView: View {
                     Circle()
                         .fill(.red)
                         .frame(width: 12, height: 12)
-                        .overlay(Circle().strokeBorder(.white, lineWidth: 2))
+                        .overlay(Circle().strokeBorder(AppColor.card, lineWidth: 2))
                         .offset(x: (CGFloat(position.day) - 0.5) / total * width - 6)
                 }
                 .frame(height: 12)
@@ -57,7 +57,7 @@ struct CurrentCyclePhaseMetreView: View {
                         let isCurrent = phase == position.phase && !isLate
                         Text(phase == .fertile ? "Fertile" : phase.title)
                             .font(.system(size: 10, weight: isCurrent ? .semibold : .regular))
-                            .foregroundColor(.black.opacity(isCurrent ? 1 : 0.6))
+                            .foregroundColor(AppColor.ink.opacity(isCurrent ? 1 : 0.6))
                             .lineLimit(1)
                             .minimumScaleFactor(0.7)
                             .frame(width: span(position.days(in: phase).count), alignment: .leading)
@@ -65,7 +65,7 @@ struct CurrentCyclePhaseMetreView: View {
                     if isLate {
                         Text("Late")
                             .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(.white)
+                            .foregroundColor(AppColor.ink)
                             .frame(width: span(position.daysLate), alignment: .leading)
                     }
                 }

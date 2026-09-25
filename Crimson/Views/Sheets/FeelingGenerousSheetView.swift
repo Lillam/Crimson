@@ -158,7 +158,6 @@ struct FeelingGenerousSheetView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     FeelingGenerousSheetView()
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
 }

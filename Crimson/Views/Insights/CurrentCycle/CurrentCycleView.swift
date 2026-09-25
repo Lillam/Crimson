@@ -18,26 +18,26 @@ struct CurrentCycleView: View {
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Current Cycle")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundColor(.black.opacity(0.75))
+                                .foregroundColor(AppColor.ink.opacity(0.75))
                             // The one hero number on the page.
                             HStack(alignment: .firstTextBaseline, spacing: 6) {
                                 Text("Day \(position.day)")
                                     .font(.system(size: 40, weight: .bold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(AppColor.ink)
                                 Text("of ~\(position.cycleLength)")
                                     .font(.system(size: 16, weight: .medium))
-                                    .foregroundColor(.black.opacity(0.75))
+                                    .foregroundColor(AppColor.ink.opacity(0.75))
                             }
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(position.daysLate > 0 ? "Late" : position.phase.title)
                                 .font(.system(size: 16, weight: .semibold))
-                                .foregroundColor(.black)
+                                .foregroundColor(AppColor.ink)
                             if position.daysLate > 0 {
                                 Text("\(position.daysLate) \(position.daysLate == 1 ? "day" : "days")")
                                     .font(.system(size: 13))
-                                    .foregroundColor(.black.opacity(0.75))
+                                    .foregroundColor(AppColor.ink.opacity(0.75))
                             }
                         }
                     }
@@ -48,11 +48,11 @@ struct CurrentCycleView: View {
                          ? "Past your usual cycle length with no period logged yet. Cycles vary — log it when it arrives."
                          : position.phase.summary)
                     .font(.system(size: 13))
-                    .foregroundColor(.black.opacity(0.75))
+                    .foregroundColor(AppColor.ink.opacity(0.75))
                     
                     Text("Ovulation estimated day \(position.ovulationDay) · fertile days \(position.fertileDays.lowerBound)–\(position.fertileDays.upperBound). Estimates from your averages, not measurements.")
                     .font(.system(size: 11))
-                    .foregroundColor(.black.opacity(0.55))
+                    .foregroundColor(AppColor.ink.opacity(0.55))
                 }
             }
         }

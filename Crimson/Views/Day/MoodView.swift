@@ -63,7 +63,7 @@ struct DayMoodView: View {
 //                    
 //                    Text(step.title)
 //                        .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-//                        .foregroundColor(isSelected ? tint : .black.opacity(0.55))
+//                        .foregroundColor(isSelected ? tint : AppColor.ink.opacity(0.55))
 //                        .lineLimit(1)
 //                        .minimumScaleFactor(0.7)
 //                }

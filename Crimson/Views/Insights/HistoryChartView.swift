@@ -50,22 +50,22 @@ struct HistoryChartView: View {
                 .annotation(position: .trailing, alignment: .leading, spacing: 4) {
                     Text("avg")
                         .font(.system(size: 10))
-                        .foregroundColor(.black.opacity(0.7))
+                        .foregroundColor(AppColor.ink.opacity(0.7))
                 }
         }
         .chartXSelection(value: $selectedLabel)
         .chartXAxis {
             AxisMarks { _ in
                 AxisValueLabel()
-                    .foregroundStyle(.black.opacity(0.7))
+                    .foregroundStyle(AppColor.ink.opacity(0.7))
                     .font(.system(size: 10))
             }
         }
         .chartYAxis {
             AxisMarks(position: .leading) { _ in
-                AxisGridLine().foregroundStyle(.black.opacity(0.15))
+                AxisGridLine().foregroundStyle(AppColor.ink.opacity(0.15))
                 AxisValueLabel()
-                    .foregroundStyle(.black.opacity(0.7))
+                    .foregroundStyle(AppColor.ink.opacity(0.7))
                     .font(.system(size: 10))
             }
         }

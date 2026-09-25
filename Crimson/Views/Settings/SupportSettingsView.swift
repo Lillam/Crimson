@@ -13,12 +13,12 @@ struct SupportSettingsView: View {
     var body: some View {
         Text("Support")
             .font(.system(size: 24, weight: .bold))
-            .foregroundColor(.black)
+            .foregroundColor(AppColor.ink)
             .padding(.top, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
         Text("Crimson is free and always will be. If you'd like to chip in, here's where.")
             .font(.system(size: 12))
-            .foregroundColor(.black.opacity(0.7))
+            .foregroundColor(AppColor.ink.opacity(0.7))
             .frame(maxWidth: .infinity, alignment: .leading)
         CardView {
             VStack(alignment: .leading, spacing: 0) {
@@ -29,7 +29,7 @@ struct SupportSettingsView: View {
                         Image(systemName: "heart")
                     }
                     .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.black)
+                    .foregroundColor(AppColor.ink)
                 }
             }
         }

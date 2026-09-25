@@ -82,7 +82,7 @@ struct WelcomeSheetView: View {
                             .padding(.vertical, 12)
                             .padding(.horizontal, 15)
                             .background(.white)
-                            .foregroundColor(.black)
+                            .foregroundColor(.black) // KEEP: on a white field
                             .cornerRadius(12)
                     }
                     
@@ -176,7 +176,7 @@ struct WelcomeSheetView: View {
         content()
             .pickerStyle(.menu)
             .labelsHidden()
-            .tint(.black)
+            .tint(.black) // KEEP: on a white pill
             .font(.system(size: 16, weight: .semibold))
             .padding(.vertical, 6)
             .padding(.horizontal, 10)
@@ -185,7 +185,6 @@ struct WelcomeSheetView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     WelcomeSheetView()
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
 }

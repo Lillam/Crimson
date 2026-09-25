@@ -129,7 +129,7 @@ struct DayView: View {
     /// period, edit the one it's in, or log a new one starting there.
     private var action: (title: String, perform: () -> Void) {
         if let _ = endableRecord {
-            return ("Period Ended", { try? store.endPeriod(on: selected) })
+            return ("Period Ended", { _ = try? store.endPeriod(on: selected) })
         } else if let record = currentRecord {
             return ("Edit Period", { draft = .edit(record) })
         } else {
@@ -240,10 +240,10 @@ struct DayView: View {
                     if isFuture {
                         Text("This day hasn't happened yet — come back to log how it went.")
                             .font(.system(size: 13))
-                            .foregroundColor(.black.opacity(0.75))
+                            .foregroundColor(AppColor.ink.opacity(0.75))
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(15)
-                            .background(.white)
+                            .background(AppColor.card)
                             .cornerRadius(12)
                     } else {
                         DayLogFormView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
@@ -251,7 +251,7 @@ struct DayView: View {
                 }
                 .padding(20)
                 .padding(.bottom, 70) // scroll clear of the floating tab bar
-                .background(.white)
+                .background(AppColor.page)
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
@@ -264,7 +264,7 @@ struct DayView: View {
             .background {
                 VStack(spacing: 0) {
                     Color.red
-                    Color.white
+                    AppColor.page
                 }
             }
         }

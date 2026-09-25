@@ -73,6 +73,18 @@ final class DayLog {
     }
 }
 
+// MARK: - Averaging
+
+extension DayLog.Mood {
+    /// 1–5, lowest first. Only for averaging — the UI uses `title`/`emoji`.
+    var value: Int { (Self.allCases.firstIndex(of: self) ?? 0) + 1 }
+}
+
+extension DayLog.Energy {
+    /// 1–5, lowest first. Only for averaging.
+    var value: Int { (Self.allCases.firstIndex(of: self) ?? 0) + 1 }
+}
+
 // MARK: - Scales
 
 extension DayLog {

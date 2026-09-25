@@ -71,10 +71,16 @@ final class SettingsStore {
 
     private enum Key {
         static let calendarRange = "settings.calendarRange"
+        static let theme = "settings.theme"
     }
 
     var calendarRange: CalendarRange {
         didSet { defaults.set(calendarRange.stored, forKey: Key.calendarRange) }
+    }
+
+    /// Light, dark, or whatever the device is set to.
+    var theme: AppTheme {
+        didSet { defaults.set(theme.rawValue, forKey: Key.theme) }
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -84,6 +90,12 @@ final class SettingsStore {
         calendarRange = defaults.object(forKey: Key.calendarRange) == nil
             ? .standard
             : CalendarRange(stored: defaults.integer(forKey: Key.calendarRange))
+
+        // An unrecognised or missing value follows the device, which is the
+        // safe default — it can never leave the app in an appearance the user
+        // didn't pick.
+        theme = defaults.string(forKey: Key.theme)
+            .flatMap(AppTheme.init(rawValue:)) ?? .system
     }
 
     /// Switches between a bounded and an unbounded calendar, remembering

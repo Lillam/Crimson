@@ -15,46 +15,46 @@ struct ProfileSettingsView: View {
     var body: some View {
         Text("Profile")
             .font(.system(size: 24, weight: .bold))
-            .foregroundColor(.black)
+            .foregroundColor(AppColor.ink)
             .frame(maxWidth: .infinity, alignment: .leading)
         Text("Editing opens the welcome screen again, right here.")
             .font(.system(size: 12))
-            .foregroundColor(.black.opacity(0.7))
+            .foregroundColor(AppColor.ink.opacity(0.7))
             .frame(maxWidth: .infinity, alignment: .leading)
         CardView {
             VStack(spacing: 15) {
                 HStack {
                     Text("Name")
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColor.ink)
                     Spacer()
                     Text(profile.displayName ?? "Not Set")
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColor.ink)
                 }
-                Divider().overlay(.black.opacity(0.3))
+                Divider().overlay(AppColor.ink.opacity(0.3))
                 HStack {
                     Text("Birthday")
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColor.ink)
                     Spacer()
                     Text(profile.birthday?.formatted ?? "Not Set")
-                        .foregroundColor(.black)
+                        .foregroundColor(AppColor.ink)
                 }
-                Divider().overlay(.black.opacity(0.3))
+                Divider().overlay(AppColor.ink.opacity(0.3))
                 Button(action: { editingProfile = true }) {
                     HStack {
                         Text("Edit")
                         Spacer()
                         Image(systemName: "chevron.right")
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(AppColor.ink)
                 }
-                Divider().overlay(.black.opacity(0.3))
+                Divider().overlay(AppColor.ink.opacity(0.3))
                 Button(action: { confirmingDelete = true }) {
                     HStack {
                         Text("Delete profile")
                         Spacer()
                         Image(systemName: "trash")
                     }
-                    .foregroundColor(.black)
+                    .foregroundColor(AppColor.ink)
                 }
                 .confirmationDialog(
                     "Delete your profile?",
@@ -75,9 +75,8 @@ struct ProfileSettingsView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     VStack (spacing: 20) {
         ProfileSettingsView()
-            .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
     }.padding(20)
 }

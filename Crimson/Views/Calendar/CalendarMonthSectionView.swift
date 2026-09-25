@@ -24,14 +24,14 @@ struct CalendarMonthSectionView: View {
         
         VStack {
             Text(month.formatted(.dateTime.month(.wide)))
-                .foregroundColor(.black)
+                .foregroundColor(AppColor.ink)
                 .padding(.bottom, 10)
             
             LazyVGrid(columns: columns, spacing: 10) {
                 ForEach(Array(weekShort.enumerated()), id: \.offset) { _, symbol in
                     Text(symbol)
                         .font(.caption)
-                        .foregroundStyle(.black.opacity(0.75))
+                        .foregroundStyle(AppColor.ink.opacity(0.75))
                 }
                 
                 // Day cells

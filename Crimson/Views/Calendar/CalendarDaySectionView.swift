@@ -57,7 +57,7 @@ struct CalendarDaySectionView: View {
         Text(date, format: .dateTime.day())
             .font(.system(size: 16, weight: .medium))
             .frame(maxWidth: .infinity, minHeight: 34)
-            .foregroundColor(isFilled ? .white : isMiddleSelectedPeriod ? .red : .black)
+            .foregroundColor(isFilled ? .white : isMiddleSelectedPeriod ? .red : AppColor.ink)
             .background {
                 switch marking {
                 case .selected(let edge):
@@ -73,12 +73,12 @@ struct CalendarDaySectionView: View {
                 case .predicted:
                     // projected days are outlined with a dotted ring, not filled
                     Circle().strokeBorder(
-                        .black.opacity(0.9),
+                        AppColor.ink.opacity(0.9),
                         style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
                     )
                 case .none:
                     if isToday {
-                        Circle().strokeBorder(.black, lineWidth: 1.5)
+                        Circle().strokeBorder(AppColor.ink, lineWidth: 1.5)
                     }
                 }
             }
@@ -112,7 +112,7 @@ struct CalendarDaySectionView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     HStack {
         CalendarDaySectionView(date: Date(), marking: .none) {}
         CalendarDaySectionView(date: Date(), marking: .period) {}

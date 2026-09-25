@@ -47,7 +47,7 @@ struct AppView: View {
                         Text(route.id.ucFirst.removingDotSuffix)
                             .font(.system(size: 10, weight: .semibold))
                     }
-                    .foregroundStyle(isSelected ? .white : .black)
+                    .foregroundStyle(isSelected ? .white : AppColor.ink)
                     .padding(.vertical, 5)
                     .frame(maxWidth: .infinity)
                     .background(
@@ -63,8 +63,8 @@ struct AppView: View {
             }
             .padding(6)
             .frame(maxWidth: .infinity)
-            .background(Color(red: 241/255, green: 241/255, blue: 241/255), in: Capsule())
-            .shadow(color: .black.opacity(0.15), radius: 8, y: 4)
+            .background(AppColor.track, in: Capsule())
+            .shadow(color: AppColor.ink.opacity(0.15), radius: 8, y: 4)
             .padding(.horizontal, 20)
             .padding(.bottom, -10)
             .allowsHitTesting(keyboardOverlap == 0)
@@ -86,7 +86,7 @@ struct AppView: View {
         }
         }
         .ignoresSafeArea(.keyboard)
-        .background(Color.white.ignoresSafeArea())
+        .background(AppColor.page.ignoresSafeArea())
         // First run only: a sheet, like the donate page, so it can be swiped
         // away as well as skipped or filled in. However it's closed, the
         // welcome counts as seen — `onDismiss` catches the swipe, which the

@@ -12,10 +12,11 @@ struct SettingsView: View {
         VStack(alignment: .leading, spacing: 20) {
             Text("Settings")
                 .font(.system(size: 30, weight: .bold))
-                .foregroundColor(.black)
+                .foregroundColor(AppColor.ink)
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {                
                     ProfileSettingsView()
+                    ThemeSettingsView()
                     CalendarSettingsView()
                     DataSettingsView()
                     SupportSettingsView()
@@ -28,13 +29,11 @@ struct SettingsView: View {
         }
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .background(.white)        
+        .background(AppColor.page)        
     }
 
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     SettingsView()
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
-        .environment(SettingsStore(defaults: UserDefaults(suiteName: "preview")!))
 }

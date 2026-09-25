@@ -24,7 +24,7 @@ struct CardViewTitle: View {
             
             Text(title)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.black)
+                .foregroundColor(AppColor.ink)
             
             Spacer()
             

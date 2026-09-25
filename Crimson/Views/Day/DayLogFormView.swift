@@ -122,7 +122,7 @@ struct DayLogFormView: View {
                                 
                                 Text(step.title)
                                     .font(.system(size: 10, weight: isSelected ? .bold : .medium))
-                                    .foregroundColor(isSelected ? tint : .black.opacity(0.55))
+                                    .foregroundColor(isSelected ? tint : AppColor.ink.opacity(0.55))
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.7)
                             }
@@ -203,22 +203,22 @@ struct DayLogFormView: View {
                 TextEditor(text: notes)
                     .focused(notesFocused)
                     .scrollContentBackground(.hidden)
-                    .foregroundColor(.black.opacity(0.8))
+                    .foregroundColor(AppColor.ink.opacity(0.8))
                     .tint(.red)
                     .font(.system(size: 15))
                     .frame(minHeight: 90)
                     .padding(.vertical, 6)
                     .padding(.horizontal, 10)
-                    .background(.black.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
+                    .background(AppColor.ink.opacity(0.04), in: RoundedRectangle(cornerRadius: 10))
                     .overlay {
                         RoundedRectangle(cornerRadius: 10)
-                            .stroke(notesFocused.wrappedValue ? .red.opacity(0.4) : .black.opacity(0.08), lineWidth: 1)
+                            .stroke(notesFocused.wrappedValue ? .red.opacity(0.4) : AppColor.ink.opacity(0.08), lineWidth: 1)
                     }
                     .overlay(alignment: .topLeading) {
                         if (entry.notes ?? "").isEmpty {
                             Text("How was your day?")
                                 .font(.system(size: 15))
-                                .foregroundColor(.black.opacity(0.4))
+                                .foregroundColor(AppColor.ink.opacity(0.4))
                                 .padding(.top, 14)
                                 .padding(.leading, 15)
                                 .allowsHitTesting(false)
@@ -254,7 +254,7 @@ struct DayLogFormView: View {
             
             Text(title)
                 .font(.system(size: 16, weight: .semibold))
-                .foregroundColor(.black)
+                .foregroundColor(AppColor.ink)
             
             Spacer()
             
@@ -293,7 +293,7 @@ struct DayLogFormView: View {
                 
                 Text(title)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(isSelected ? .white : .black.opacity(0.75))
+                    .foregroundColor(isSelected ? .white : AppColor.ink.opacity(0.75))
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                 
@@ -320,7 +320,7 @@ struct DayLogFormView: View {
                 .foregroundColor(.red.opacity(0.8))
             Text(text)
                 .font(.system(size: 12))
-                .foregroundColor(.black.opacity(0.7))
+                .foregroundColor(AppColor.ink.opacity(0.7))
         }
     }
 }

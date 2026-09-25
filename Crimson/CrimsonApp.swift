@@ -38,6 +38,10 @@ struct CrimsonApp: App {
                 .environment(store)
                 .environment(profile)
                 .environment(settings)
+                // Applied at the root so every sheet and alert inherits it.
+                // `.system` resolves to nil, which hands the choice back to
+                // iOS rather than pinning it to whatever it was at launch.
+                .preferredColorScheme(settings.theme.colorScheme)
                 .environment(days)
         }
         // The container built in `init`, not a second one: `.modelContainer(for:)`

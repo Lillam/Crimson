@@ -23,11 +23,26 @@ enum LogOutcome {
     /// this is just dummy data for the period tracker based on my partner's current
     /// menstrual cycles for the time being.
     var records: [Cycle] = []
+
+    /// The averages the engine remembers. These are derived from *every* record
+    /// ever logged — however long ago — so once a user stops logging, the last
+    /// known averages keep being applied to every future month.
+    ///
+    /// Recomputed on load rather than on read: it walks every record, and it's
+    /// read once per day log by `phase(on:)`, which made building the insights
+    /// charts quadratic in the amount of data.
+    private(set) var stats: CycleStats = CycleStats(
+        averageCycleLength: 0,
+        averageBleedLength: 0,
+        lastPeriod: nil
+    )
     
     override func load() {
         records = (try? context.fetch(
             FetchDescriptor<Cycle>(sortBy: [SortDescriptor(\.storedStart)])
         )) ?? []
+        
+        stats = makeStats()
     }
     
     /// Records ordered oldest → newest. Cycle length is measured between
@@ -37,10 +52,7 @@ enum LogOutcome {
         records.sorted { $0.start < $1.start }
     }
     
-    /// The averages the engine remembers. These are derived from *every* record
-    /// ever logged — however long ago — so once a user stops logging, the last
-    /// known averages keep being applied to every future month.
-    var stats: CycleStats {
+    private func makeStats() -> CycleStats {
         let sorted = sortedRecords
         var cycleLengths: [Int] = []
         var bleedLengths: [Int] = []
@@ -103,6 +115,39 @@ enum LogOutcome {
         records.first { $0.isOngoing }
     }
     
+    /// Which phase `date` fell in, worked out from the logged period that
+    /// started most recently before it.
+    ///
+    /// `CycleEngine.position(on:from:)` can't answer this: it guards on
+    /// `day >= lastPeriod` and projects forward, so every historical day comes
+    /// back nil. Here the day is placed against the cycle it actually fell in.
+    func phase(on date: Date) -> CyclePhase? {
+        let day = calendar.startOfDay(for: date)
+
+        guard
+            stats.averageCycleLength > 0,
+            let cycle = records.last(where: { calendar.startOfDay(for: $0.start) <= day })
+        else {
+            return nil
+        }
+
+        let start = calendar.startOfDay(for: cycle.start)
+        let offset = calendar.dateComponents([.day], from: start, to: day).day ?? 0
+
+        // A day far past its cycle start means a gap in logging rather than a
+        // very long cycle, and placing it in a phase would be guesswork.
+        guard offset >= 0, offset < stats.averageCycleLength else {
+            return nil
+        }
+
+        return CyclePosition(
+            day: offset + 1,
+            cycleLength: stats.averageCycleLength,
+            bleedLength: cycle.length ?? stats.averageBleedLength,
+            cycleStart: start
+        ).phase
+    }
+
     /// The logged period covering `date`, if any.
     func record(containing date: Date) -> Cycle? {
         records.first { $0.contains(date) }

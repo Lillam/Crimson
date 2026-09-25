@@ -12,6 +12,10 @@ struct InsightsView: View {
     @Environment(CycleStore.self) var cycles
     @Environment(ProfileStore.self) var profile
     
+    /// How far back the day-log cards look. The cycle cards above them are
+    /// unaffected — those are built from averages over everything logged.
+    @State private var scope: InsightsScope = .twelveMonths
+    
     private let calendar = Calendar.current
     private let engine = CycleEngine()
     
@@ -34,10 +38,10 @@ struct InsightsView: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text("Insights")
                     .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(.black)
+                    .foregroundColor(AppColor.ink)
                 Text(profile.displayName.map { "How your cycle's looking, \($0)." } ?? "How your cycle's looking.")
                     .font(.system(size: 14))
-                    .foregroundColor(.black.opacity(0.75))
+                    .foregroundColor(AppColor.ink.opacity(0.75))
             }
             ScrollView {
                 VStack(alignment: .leading, spacing: 20) {
@@ -46,10 +50,10 @@ struct InsightsView: View {
                             VStack(alignment: .leading, spacing: 8) {
                                 Text("Nothing to show yet")
                                     .font(.system(size: 16, weight: .semibold))
-                                    .foregroundColor(.black)
+                                    .foregroundColor(AppColor.ink)
                                 Text("Insights are built from your averages, so they appear once two periods have been logged. Use Log period on the calendar to add them — past ones count too.")
                                     .font(.system(size: 13))
-                                    .foregroundColor(.black.opacity(0.75))
+                                    .foregroundColor(AppColor.ink.opacity(0.75))
                             }
                         }
                     } else {
@@ -69,6 +73,23 @@ struct InsightsView: View {
                         )
                         RecentPeriodList()
                     }
+                    
+                    // One control, sitting above everything it governs.
+                    HStack {
+                        Text("Daily logs")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(AppColor.ink)
+                        
+                        Spacer()
+                        
+                        ScopePickerView(scope: $scope)
+                    }
+                    .padding(.top, 10)
+                    
+                    LoggingStatView(scope: scope)
+                    SymptomFrequencyView(scope: scope)
+                    MoodTrendView(scope: scope)
+                    MoodByPhaseView(scope: scope)
                 }
                 .padding(.bottom, 70)
             }
@@ -79,7 +100,7 @@ struct InsightsView: View {
         // so it extends under it (and the tab bar) rather than being clipped.
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .background(.white)
+        .background(AppColor.page)
     }
 }
 
