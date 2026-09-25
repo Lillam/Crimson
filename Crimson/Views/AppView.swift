@@ -9,7 +9,6 @@ import SwiftUI
 
 struct AppView: View {
     @Environment(Router.self) var router
-    @Environment(CycleStore.self) var store
     @Environment(ProfileStore.self) var profile
     
     /// How far the keyboard overlaps the page, in points. We opt the whole
@@ -101,11 +100,6 @@ struct AppView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     AppView()
-        .environment(Router())
-        .environment(CycleStore())
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
-        .environment(SettingsStore(defaults: UserDefaults(suiteName: "preview")!))
-        .environment(DayEntryStore(fileURL: nil))
 }

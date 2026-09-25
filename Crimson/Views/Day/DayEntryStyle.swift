@@ -7,11 +7,11 @@
 
 import SwiftUI
 
-// How the day log's options are drawn. Kept out of `DayEntry` so the model
-// stays plain Foundation — nothing saved to disk depends on any of this, and
-// an icon or a colour can change without touching stored data.
+// How the day log's options are drawn. Kept out of `DayLog` so the model stays
+// plain Foundation + SwiftData — nothing saved to disk depends on any of this,
+// and an icon or a colour can change without touching stored data.
 
-extension DayEntry.Flow {
+extension DayLog.Flow {
     /// An outline, then a half drop, a full one, and finally a cluster —
     /// the row reads as a scale even before the labels are.
     var icon: String {
@@ -22,7 +22,7 @@ extension DayEntry.Flow {
         case .heavy:    "humidity.fill"
         }
     }
-    
+
     /// Pink through to a deep crimson — the app's red is the heavy end.
     var tint: Color {
         switch self {
@@ -34,7 +34,7 @@ extension DayEntry.Flow {
     }
 }
 
-extension DayEntry.Symptom {
+extension DayLog.Symptom {
     var icon: String {
         switch self {
         case .cramps:        "bolt.heart.fill"
@@ -49,7 +49,7 @@ extension DayEntry.Symptom {
         case .insomnia:      "moon.zzz.fill"
         }
     }
-    
+
     /// One hue each, muted enough to sit beside the app's red without
     /// fighting it. Grouped loosely by where the symptom is felt: aches warm,
     /// head and sleep cool, gut green.
@@ -69,19 +69,52 @@ extension DayEntry.Symptom {
     }
 }
 
-extension Scale {
-    /// The five steps, low to high. Both scales share it so a "3" means the
-    /// same shade of middling whether it's mood or energy.
-    static let tints: [Color] = [
-        Color(red: 0.45, green: 0.50, blue: 0.64),  // slate
-        Color(red: 0.56, green: 0.45, blue: 0.69),  // violet
-        Color(red: 0.83, green: 0.62, blue: 0.27),  // amber
-        Color(red: 0.36, green: 0.65, blue: 0.55),  // teal
-        Color(red: 0.26, green: 0.60, blue: 0.38),  // green
+// MARK: - The five-point scales
+
+/// What the mood and energy rows need to draw themselves. Both scales share it
+/// so one card can render either, and so a "middling" answer is the same shade
+/// whichever row it's on.
+protocol DayLogScale: CaseIterable, Identifiable, Hashable {
+    var title: String { get }
+    var emoji: String { get }
+    var tint: Color { get }
+}
+
+/// Low to high: slate, violet, amber, teal, green.
+enum ScaleTint {
+    static let steps: [Color] = [
+        Color(red: 0.45, green: 0.50, blue: 0.64),
+        Color(red: 0.56, green: 0.45, blue: 0.69),
+        Color(red: 0.83, green: 0.62, blue: 0.27),
+        Color(red: 0.36, green: 0.65, blue: 0.55),
+        Color(red: 0.26, green: 0.60, blue: 0.38),
     ]
-    
-    /// `value` is a 1–5 step, as stored on the entry.
-    static func tint(step value: Int) -> Color {
-        tints[max(0, min(value - 1, tints.count - 1))]
+
+    static func step(_ index: Int) -> Color {
+        steps[max(0, min(index, steps.count - 1))]
+    }
+}
+
+extension DayLog.Mood: DayLogScale {
+    var tint: Color {
+        switch self {
+        case .rough: ScaleTint.step(0)
+        case .low:   ScaleTint.step(1)
+        case .okay:  ScaleTint.step(2)
+        case .good:  ScaleTint.step(3)
+        case .great: ScaleTint.step(4)
+        }
+    }
+}
+
+extension DayLog.Energy: DayLogScale {
+    var tint: Color {
+        switch self {
+        case .drained:   ScaleTint.step(0)
+        case .tired:     ScaleTint.step(1)
+        case .steady:    ScaleTint.step(2)
+        case .lively:    ScaleTint.step(3)
+        case .energetic: ScaleTint.step(4)
+        }
     }
 }

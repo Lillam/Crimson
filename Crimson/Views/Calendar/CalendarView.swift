@@ -97,15 +97,18 @@ struct CalendarView: View {
     /// Actual logged bleeding days, normalised to the start of each day.
     private var loggedDays: Set<Date> {
         var days: Set<Date> = []
+        
         for record in store.records {
-            let last = calendar.startOfDay(for: record.effectiveEndDate)
-            var day = calendar.startOfDay(for: record.startDate)
+            let last = calendar.startOfDay(for: record.effectiveEnd)
+            var day = calendar.startOfDay(for: record.start)
+            
             while day <= last {
                 days.insert(day)
                 guard let next = calendar.date(byAdding: .day, value: 1, to: day) else { break }
                 day = next
             }
         }
+        
         return days
     }
 
@@ -166,6 +169,7 @@ struct CalendarView: View {
     private var selectionHint: String {
         selectionStart == nil ? "Tap the first day of your period" : "Now tap the last day"
     }
+
     
     /// What the status line says when not selecting: a birthday greeting on
     /// the day itself, otherwise the next projected period.
@@ -218,7 +222,26 @@ struct CalendarView: View {
         draft = PeriodDraft(start: range.lowerBound, end: range.upperBound)
     }
     
+    /// Whether `date` can be picked right now.
+    ///
+    /// Only constrained while logging a period: you can't have bled on a day
+    /// that hasn't happened yet. Outside selection every day stays tappable —
+    /// the day page is readable for future days, it just has nothing to log.
+    private func isSelectable(_ date: Date) -> Bool {
+        guard isSelecting else {
+            return true
+        }
+        
+        return calendar.startOfDay(for: date) <= calendar.startOfDay(for: Date())
+    }
+    
     private func tapped(_ date: Date) {
+        // The cells themselves stop the tap, so this is belt and braces for
+        // anything else that routes through here.
+        guard isSelectable(date) else {
+            return
+        }
+        
         if isSelecting {
             select(date)
         } else {
@@ -337,6 +360,7 @@ struct CalendarView: View {
                                 marking: {
                                     marking(for: $0, logged: logged, projected: projected)
                                 },
+                                isEnabled: isSelectable,
                                 onTap: tapped
                             )
                         }
@@ -388,11 +412,6 @@ struct CalendarView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     CalendarView()
-        .environment(Router())
-        .environment(CycleStore())
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
-        .environment(SettingsStore(defaults: UserDefaults(suiteName: "preview")!))
-        .environment(DayEntryStore(fileURL: nil))
 }

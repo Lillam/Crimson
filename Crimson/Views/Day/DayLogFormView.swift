@@ -11,11 +11,7 @@ import SwiftUI
 /// and anything they want to write down. Every control writes straight
 /// through to the store, so there's no save button.
 struct DayLogFormView: View {
-    @Environment(DayEntryStore.self) var entries
-    /// The card colour, shared with the day page's other cards. White on a
-    /// white page, so the cards are drawn with a hairline and a soft shadow
-    /// rather than a fill — see `card(_:)`.
-    static let cardColor = Color(.white)
+    @Environment(DayLogStore.self) var days
     /// Shared by the flow and symptom grids: as many chips per row as fit,
     /// which is two on a phone.
     private static let chipColumns = [GridItem(.adaptive(minimum: 140), spacing: 6)]
@@ -27,28 +23,56 @@ struct DayLogFormView: View {
     /// Owned by the page so a tap anywhere on it can dismiss the keyboard.
     var notesFocused: FocusState<Bool>.Binding
     
-    private var entry: DayEntry {
-        entries.entry(for: date)
+    private var entry: DayLog {
+        days.entry(for: date)
     }
     
     /// A binding into one field of today's entry that persists on set.
-    private func field<T>(_ keyPath: WritableKeyPath<DayEntry, T>) -> Binding<T> {
+    /// `ReferenceWritableKeyPath` because `DayLog` is a class now.
+    private func field<T>(_ keyPath: ReferenceWritableKeyPath<DayLog, T>) -> Binding<T> {
         Binding(
-            get: { entries.entry(for: date)[keyPath: keyPath] },
-            set: { value in entries.update(for: date) { $0[keyPath: keyPath] = value } }
+            get: { days.entry(for: date)[keyPath: keyPath] },
+            set: { value in days.update(for: date) { $0[keyPath: keyPath] = value } }
         )
+    }
+    
+    /// Notes are stored optional but edited as plain text, and an empty box
+    /// means "nothing written" rather than an empty string.
+    private var notes: Binding<String> {
+        Binding(
+            get: { days.entry(for: date).notes ?? "" },
+            set: { value in
+                days.update(for: date) { $0.notes = value.isEmpty ? nil : value }
+            }
+        )
+    }
+    
+    /// Changes the whole card should tick for. `DayLog` is a class, so it
+    /// compares by identity and can't be a `sensoryFeedback` trigger itself.
+    private var changeToken: String {
+        let entry = entry
+        
+        return [
+            entry.mood?.rawValue ?? "",
+            entry.energy?.rawValue ?? "",
+            entry.flow?.rawValue ?? "",
+            entry.symptoms.map(\.rawValue).joined(separator: ","),
+            entry.notes ?? ""
+        ].joined(separator: "|")
     }
     
     var body: some View {
         VStack(spacing: 12) {
-            scaleCard("Mood", icon: "face.smiling", scale: Scale.mood, selection: field(\.mood))
-            scaleCard("Energy", icon: "bolt.fill", scale: Scale.energy, selection: field(\.energy))
-            flowCard
+            scaleCard("Mood", icon: "face.smiling", selection: field(\.mood))
+            scaleCard("Energy", icon: "bolt.fill", selection: field(\.energy))
+            if isPeriodDay {
+                flowCard
+            }
             symptomsCard
             notesCard
         }
         // One tick per change, wherever in the log it came from.
-        .sensoryFeedback(.selection, trigger: entry)
+        .sensoryFeedback(.selection, trigger: changeToken)
     }
     
     // MARK: - Mood / energy
@@ -56,7 +80,7 @@ struct DayLogFormView: View {
     /// Five faces, each with its word underneath, so the row can be read
     /// without tapping anything: 😴 Drained through to ⚡️ Energised.
     @ViewBuilder
-    private func scaleCard(_ title: String, icon: String, scale: [(emoji: String, label: String)], selection: Binding<Int?>) -> some View {
+    private func scaleCard<Option: DayLogScale>(_ title: String, icon: String, selection: Binding<Option?>) -> some View {
         let chosen = selection.wrappedValue
         
         CardView {
@@ -64,16 +88,15 @@ struct DayLogFormView: View {
                 CardViewTitle(
                     title: title,
                     icon: icon,
-                    tint: chosen.map { Scale.tint(step: $0)} ?? .red,
-                    detail: chosen.map { scale[$0 - 1].label },
-                    detailTint: chosen.map { Scale.tint(step: $0) }
+                    tint: chosen?.tint ?? .red,
+                    detail: chosen?.title,
+                    detailTint: chosen?.tint
                 )
                 
                 HStack(spacing: 4) {
-                    ForEach(1...5, id: \.self) { value in
-                        let step = scale[value - 1]
-                        let tint = Scale.tint(step: value)
-                        let isSelected = chosen == value
+                    ForEach(Array(Option.allCases)) { step in
+                        let tint = step.tint
+                        let isSelected = chosen == step
                         // Once something's chosen the rest step back, so the
                         // answer stands out from a glance at the page.
                         let isDimmed = chosen != nil && !isSelected
@@ -81,7 +104,7 @@ struct DayLogFormView: View {
                         Button {
                             notesFocused.wrappedValue = false
                             // Tapping the current choice clears it.
-                            selection.wrappedValue = isSelected ? nil : value
+                            selection.wrappedValue = isSelected ? nil : step
                         } label: {
                             VStack(spacing: 6) {
                                 Text(step.emoji)
@@ -97,7 +120,7 @@ struct DayLogFormView: View {
                                     }
                                     .shadow(color: tint.opacity(isSelected ? 0.35 : 0), radius: 6, y: 3)
                                 
-                                Text(step.label)
+                                Text(step.title)
                                     .font(.system(size: 10, weight: isSelected ? .bold : .medium))
                                     .foregroundColor(isSelected ? tint : .black.opacity(0.55))
                                     .lineLimit(1)
@@ -107,7 +130,7 @@ struct DayLogFormView: View {
                             .scaleEffect(isSelected ? 1.04 : 1)
                         }
                         .frame(maxWidth: .infinity)
-                        .accessibilityLabel(step.label)
+                        .accessibilityLabel(step.title)
                     }
                 }
                 .animation(.snappy(duration: 0.25), value: chosen)
@@ -125,19 +148,15 @@ struct DayLogFormView: View {
                 // The same grid as the symptoms below: four across would
                 // squeeze the longer words out now the discs take a slice.
                 LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 10) {
-                    ForEach(DayEntry.Flow.allCases) { flow in
+                    ForEach(DayLog.Flow.allCases) { flow in
                         chip(flow.title, icon: flow.icon, tint: flow.tint, isSelected: entry.flow == flow) {
-                            entries.update(for: date) {
+                            days.update(for: date) {
                                 $0.flow = $0.flow == flow ? nil : flow
                             }
                         }
                     }
                 }
                 .animation(.snappy(duration: 0.2), value: entry.flow)
-                
-                if !isPeriodDay && entry.flow != nil {
-                    note("This day isn't inside a logged period — use Log Period above if it should be.")
-                }
             }
         }
     }
@@ -150,14 +169,21 @@ struct DayLogFormView: View {
                 CardViewTitle(title: "Symptoms", icon: "cross.case.fill", tint: .red, detail: entry.symptoms.isEmpty ? nil : "\(entry.symptoms.count)", detailTint: .red)
                 
                 LazyVGrid(columns: Self.chipColumns, alignment: .leading, spacing: 10) {
-                    ForEach(DayEntry.Symptom.allCases) { symptom in
-                        chip(symptom.title, icon: symptom.icon, tint: symptom.tint, isSelected: entry.symptoms.contains(symptom)) {
-                            entries.update(for: date) {
-                                if $0.symptoms.contains(symptom) {
-                                    $0.symptoms.remove(symptom)
+                    ForEach(DayLog.Symptom.allCases) { symptom in
+                        chip(symptom.title, icon: symptom.icon, tint: symptom.tint, isSelected: entry.symptomSet.contains(symptom)) {
+                            days.update(for: date) { log in
+                                // Through `symptomSet` rather than the stored
+                                // array, so the order stays canonical and a
+                                // symptom can't be added twice.
+                                var chosen = log.symptomSet
+                                
+                                if chosen.contains(symptom) {
+                                    chosen.remove(symptom)
                                 } else {
-                                    $0.symptoms.insert(symptom)
+                                    chosen.insert(symptom)
                                 }
+                                
+                                log.symptomSet = chosen
                             }
                         }
                     }
@@ -174,7 +200,7 @@ struct DayLogFormView: View {
             VStack(alignment: .leading, spacing: 10) {
                 CardViewTitle(title: "Notes", icon: "square.and.pencil", tint: .red, detail: nil, detailTint: nil)
                 
-                TextEditor(text: field(\.notes))
+                TextEditor(text: notes)
                     .focused(notesFocused)
                     .scrollContentBackground(.hidden)
                     .foregroundColor(.black.opacity(0.8))
@@ -189,7 +215,7 @@ struct DayLogFormView: View {
                             .stroke(notesFocused.wrappedValue ? .red.opacity(0.4) : .black.opacity(0.08), lineWidth: 1)
                     }
                     .overlay(alignment: .topLeading) {
-                        if entry.notes.isEmpty {
+                        if (entry.notes ?? "").isEmpty {
                             Text("How was your day?")
                                 .font(.system(size: 15))
                                 .foregroundColor(.black.opacity(0.4))
@@ -299,12 +325,11 @@ struct DayLogFormView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     @Previewable @FocusState var notesFocused: Bool
     
     ScrollView {
         DayLogFormView(date: Date(), isPeriodDay: true, notesFocused: $notesFocused)
             .padding(20)
     }
-    .environment(DayEntryStore(fileURL: nil))
 }

@@ -6,26 +6,35 @@
 //
 
 import Foundation
+import SwiftData
 
-@Observable
-final class CycleStore {
+/// What came of trying to log a period. An overlap isn't a failure — it's
+/// an ordinary thing for someone to do — so it comes back as a result the
+/// caller can put in front of the user, rather than as a thrown error.
+/// `throws` on these methods means the database write itself went wrong.
+enum LogOutcome {
+    case logged(Cycle)
+    case clashes(with: Cycle)
+}
+
+@Observable final class CycleStore : Store<Cycle> {
     private let calendar = Calendar.current
 
     /// this is just dummy data for the period tracker based on my partner's current
     /// menstrual cycles for the time being.
-    var records: [CycleRecord] = [
-        CycleRecord(startDate: toDate("2026-05-11"), endDate: toDate("2026-05-15")),
-        CycleRecord(startDate: toDate("2026-06-10"), endDate: toDate("2026-06-13")),
-        CycleRecord(startDate: toDate("2026-07-09"), endDate: toDate("2026-07-12")),
-        CycleRecord(startDate: toDate("2026-08-05"), endDate: toDate("2026-08-08")),
-        CycleRecord(startDate: toDate("2026-09-04"), endDate: toDate("2026-09-07"))
-    ]
+    var records: [Cycle] = []
+    
+    override func load() {
+        records = (try? context.fetch(
+            FetchDescriptor<Cycle>(sortBy: [SortDescriptor(\.storedStart)])
+        )) ?? []
+    }
     
     /// Records ordered oldest → newest. Cycle length is measured between
     /// consecutive starts, so the order matters regardless of how the records
     /// were logged.
-    private var sortedRecords: [CycleRecord] {
-        records.sorted { $0.startDate < $1.startDate }
+    private var sortedRecords: [Cycle] {
+        records.sorted { $0.start < $1.start }
     }
     
     /// The averages the engine remembers. These are derived from *every* record
@@ -37,7 +46,7 @@ final class CycleStore {
         var bleedLengths: [Int] = []
         
         sorted.enumerated().forEach { index, record in
-            if let bleedLength = record.bleedLength {
+            if let bleedLength = record.length {
                 bleedLengths.append(bleedLength)
             }
                         
@@ -58,7 +67,7 @@ final class CycleStore {
             /// projection into the future. Cycle length is measured start-to-start,
             /// so the engine adds averageCycleLength repeatedly from this date to
             /// acquire what the projection might look like.
-            lastPeriod: sorted.last?.startDate
+            lastPeriod: sorted.last?.start
         )
     }
     
@@ -70,7 +79,7 @@ final class CycleStore {
         let sorted = sortedRecords
         return zip(sorted, sorted.dropFirst()).compactMap { record, next in
             getCycleLengthFromRecords(from: next, to: record).map {
-                CycleSample(id: record.id, start: record.startDate, days: $0)
+                CycleSample(id: record.id, start: record.start, days: $0)
             }
         }
     }
@@ -78,113 +87,93 @@ final class CycleStore {
     /// Length of each finished period.
     var bleedLengthHistory: [CycleSample] {
         sortedRecords.compactMap { record in
-            record.bleedLength.map { CycleSample(id: record.id, start: record.startDate, days: $0) }
+            record.length.map { CycleSample(id: record.id, start: record.start, days: $0) }
         }
     }
     
     /// Newest first, for a "recent periods" list.
-    var recentRecords: [CycleRecord] {
+    var recentRecords: [Cycle] {
         sortedRecords.reversed()
     }
     
     // MARK: - Lookups
     
     /// The period that has been started but not yet ended, if there is one.
-    var openRecord: CycleRecord? {
+    var openRecord: Cycle? {
         records.first { $0.isOngoing }
     }
     
     /// The logged period covering `date`, if any.
-    func record(containing date: Date) -> CycleRecord? {
+    func record(containing date: Date) -> Cycle? {
         records.first { $0.contains(date) }
     }
     
-    // MARK: - Logging
-    
     /// Logs a period running from `start` to `end` inclusive. Pass `nil` for
-    /// `end` to log a period that's still ongoing. Any existing records that
-    /// overlap or sit directly next to the new range are folded into it, so a
-    /// user can never end up with two records for the same days.
+    /// `end` to log a period that's still ongoing. A range that overlaps a
+    /// period already logged is refused rather than merged into it, so the
+    /// user gets told instead of silently having two entries rewritten.
     @discardableResult
-    func logPeriod(from start: Date, to end: Date?) -> CycleRecord {
-        var start = calendar.startOfDay(for: start)
-        var end = end.map { calendar.startOfDay(for: $0) }
+    func logPeriod(from start: Date, to end: Date?) throws -> LogOutcome {
+        let (start, end) = ordered(start, end)
         
-        // Tolerate the range being given back-to-front.
-        if let unwrappedEnd = end, unwrappedEnd < start {
-            (start, end) = (unwrappedEnd, start)
+        if let existing = clash(from: start, to: end, ignoring: nil) {
+            return .clashes(with: existing)
         }
         
-        let rangeEnd = end ?? max(start, calendar.startOfDay(for: Date()))
-        let touching = records.filter { record in
-            let recordStart = calendar.startOfDay(for: record.startDate)
-            let recordEnd = calendar.startOfDay(for: record.effectiveEndDate)
-            // Overlapping, or adjacent (one ends the day before the other starts).
-            return recordStart <= dayAfter(rangeEnd) && recordEnd >= dayBefore(start)
-        }
+        let cycle = Cycle(start: start, end: end)
+        try insert(cycle)
         
-        let mergedStart = ([start] + touching.map { calendar.startOfDay(for: $0.startDate) }).min() ?? start
-        let mergedEnd: Date? = end.map { end in
-            ([end] + touching.compactMap { $0.endDate.map(calendar.startOfDay) }).max() ?? end
-        }
-        
-        let merged = CycleRecord(startDate: mergedStart, endDate: mergedEnd)
-        records.removeAll { record in touching.contains { $0.id == record.id } }
-        insert(merged)
-        return merged
+        return .logged(cycle)
     }
     
-    /// Closes the currently open period on `date`. Does nothing if no period is open.
-    func endPeriod(on date: Date) {
+    /// Closes the currently open period on `date`. Returns nil if no period
+    /// is open, so "nothing to end" reads differently from "couldn't end it".
+    @discardableResult
+    func endPeriod(on date: Date) throws -> LogOutcome? {
         guard let open = openRecord else {
-            return
-        }
-        
-        update(open, start: open.startDate, end: date)
-    }
-    
-    /// Replaces `record`'s dates, merging with neighbours the same way `logPeriod` does.
-    func update(_ record: CycleRecord, start: Date, end: Date?) {
-        delete(record)
-        logPeriod(from: start, to: end)
-    }
-    
-    func delete(_ record: CycleRecord) {
-        records.removeAll { $0.id == record.id }
-    }
-    
-    private func insert(_ record: CycleRecord) {
-        records.append(record)
-        records.sort { $0.startDate < $1.startDate }
-    }
-    
-    private func dayBefore(_ date: Date) -> Date {
-        calendar.date(byAdding: .day, value: -1, to: date) ?? date
-    }
-    
-    private func dayAfter(_ date: Date) -> Date {
-        calendar.date(byAdding: .day, value: 1, to: date) ?? date
-    }
-    
-    // MARK: - Stats helpers
-    
-    /// helpers for the internal class which will be for building what the store needs.
-    /// here we're just going to be looking at getting the cycle duration — bleed
-    /// length lives on `CycleRecord` itself.
-    
-    /// Whole calendar days between two consecutive period starts. Uses the
-    /// calendar rather than dividing seconds so daylight-saving changes can't
-    /// shave a day off a cycle.
-    private func getCycleLengthFromRecords(from end: CycleRecord, to start: CycleRecord?) -> Int? {
-        guard let starting = start else {
             return nil
         }
         
-        return calendar.dateComponents(
-            [.day],
-            from: calendar.startOfDay(for: starting.startDate),
-            to: calendar.startOfDay(for: end.startDate)
-        ).day
+        return try update(open, start: open.start, end: date)
+    }
+    
+    /// Moves `record` to a new range.
+    ///
+    /// The range is checked *before* anything is written, so a clash leaves
+    /// the record exactly as it was. The dates are edited in place rather than
+    /// deleted and re-inserted, which keeps the record's id — the charts key
+    /// their samples on it.
+    @discardableResult
+    func update(_ record: Cycle, start: Date, end: Date?) throws -> LogOutcome {
+        let (start, end) = ordered(start, end)
+        
+        if let existing = clash(from: start, to: end, ignoring: record) {
+            return .clashes(with: existing)
+        }
+        
+        record.start = start
+        record.end = end
+        
+        try context.save()
+        reload()
+        
+        return .logged(record)
+    }
+    
+    /// The first logged period covering any of these days. `editing` is left
+    /// out of the search — a record being moved can't clash with itself.
+    private func clash(from start: Date, to end: Date?, ignoring editing: Cycle?) -> Cycle? {
+        let rangeEnd = end ?? max(start, calendar.startOfDay(for: Date()))
+        
+        return records.first {
+            $0.id != editing?.id && $0.overlaps(start, through: rangeEnd)
+        }
+    }
+    
+    func delete(_ record: Cycle) throws {
+        context.delete(record)
+        try context.save()
+        reload()
     }
 }
 

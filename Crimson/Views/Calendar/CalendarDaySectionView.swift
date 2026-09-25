@@ -22,10 +22,14 @@ enum DayMarking {
 
 /// A single day cell in the calendar grid.
 struct CalendarDaySectionView: View {
-    @Environment(DayEntryStore.self) var entries
+    @Environment(DayLogStore.self) var days
     
     let date: Date
     let marking: DayMarking
+    /// Whether this day can be tapped right now. Days outside the range the
+    /// calendar is currently asking for are dimmed and inert rather than
+    /// hidden, so the grid keeps its shape.
+    var isEnabled: Bool = true
     let onTap: () -> Void
     
     private var isToday: Bool {
@@ -80,15 +84,18 @@ struct CalendarDaySectionView: View {
             }
             // A small dot marks days with a mood/symptom/notes entry.
             .overlay(alignment: .bottom) {
-                if entries.hasEntry(on: date) {
+                if days.hasEntry(on: date) {
                     Circle()
                         .fill(isFilled ? .white : .red)
                         .frame(width: 4, height: 4)
                         .offset(y: -3)
                 }
             }
+            .opacity(isEnabled ? 1 : 0.3)
             .contentShape(Rectangle())
             .onTapGesture(perform: onTap)
+            .allowsHitTesting(isEnabled)
+            .animation(.snappy(duration: 0.2), value: isEnabled)
     }
     
     /// The band behind a selected range. It reaches half a column gap either
@@ -113,7 +120,7 @@ struct CalendarDaySectionView: View {
         CalendarDaySectionView(date: Date(), marking: .selected(.start)) {}
         CalendarDaySectionView(date: Date(), marking: .selected(.middle)) {}
         CalendarDaySectionView(date: Date(), marking: .selected(.end)) {}
+        CalendarDaySectionView(date: Date(), marking: .none, isEnabled: false) {}
     }
     .padding()
-    .environment(DayEntryStore(fileURL: nil))
 }

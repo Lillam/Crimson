@@ -14,7 +14,7 @@ struct PeriodDraft: Identifiable {
     let id = UUID()
     var start: Date
     var end: Date?
-    var existing: CycleRecord? = nil
+    var existing: Cycle? = nil
     
     /// A fresh draft starting on `date`, with the end guessed from the
     /// user's average bleed length so they usually only need to confirm.
@@ -26,8 +26,8 @@ struct PeriodDraft: Identifiable {
         return PeriodDraft(start: start, end: end)
     }
     
-    static func edit(_ record: CycleRecord) -> PeriodDraft {
-        PeriodDraft(start: record.startDate, end: record.endDate, existing: record)
+    static func edit(_ record: Cycle) -> PeriodDraft {
+        PeriodDraft(start: record.start, end: record.end, existing: record)
     }
 }
 
@@ -38,7 +38,8 @@ struct LogPeriodSheet: View {
     @Environment(CycleStore.self) var store
     @Environment(\.dismiss) private var dismiss
     
-    private let existing: CycleRecord?
+    private let existing: Cycle?
+    @State private var problem: Problem?
     @State private var start: Date
     @State private var end: Date
     @State private var isOngoing: Bool
@@ -71,21 +72,69 @@ struct LogPeriodSheet: View {
     private func save() {
         let endDate: Date? = isOngoing ? nil : end
         
-        if let existing {
-            store.update(existing, start: start, end: endDate)
-        } else {
-            store.logPeriod(from: start, to: endDate)
+        do {
+            let outcome: LogOutcome
+            
+            if let existing {
+                outcome = try store.update(existing, start: start, end: endDate)
+            } else {
+                outcome = try store.logPeriod(from: start, to: endDate)
+            }
+            
+            switch outcome {
+            case .logged:
+                dismiss()
+            case .clashes(let period):
+                // Left on screen rather than dismissed, so the dates they
+                // picked are still there to adjust.
+                problem = .clashes(period)
+            }
+        } catch {
+            problem = .saveFailed
         }
-        
-        dismiss()
     }
     
     private func delete() {
-        if let existing {
-            store.delete(existing)
+        guard let existing else {
+            dismiss()
+            return
         }
         
-        dismiss()
+        do {
+            try store.delete(existing)
+            dismiss()
+        } catch {
+            problem = .saveFailed
+        }
+    }
+    
+    /// Something worth interrupting the user for. Not an `Error`: a clash
+    /// carries the `Cycle` it ran into, and `@Model` types aren't `Sendable`.
+    private enum Problem {
+        case clashes(Cycle)
+        case saveFailed
+    }
+    
+    private var problemTitle: String {
+        switch problem {
+        case .clashes:    "Already logged"
+        case .saveFailed: "Couldn't save"
+        case nil:         ""
+        }
+    }
+    
+    private var problemMessage: String {
+        switch problem {
+        case .clashes(let period):
+            let from = period.start.formatted(.dateTime.day().month(.abbreviated))
+            let to = period.end?.formatted(.dateTime.day().month(.abbreviated))
+            let range = to.map { "\(from) – \($0)" } ?? "\(from) onwards"
+            return "There's already a period logged for \(range). Change these dates, or edit that period instead."
+        case .saveFailed:
+            return "Your period couldn't be saved. Please try again."
+        case nil:
+            return ""
+        }
     }
     
     var body: some View {
@@ -134,16 +183,35 @@ struct LogPeriodSheet: View {
         .presentationDragIndicator(.visible)
         // Solid backdrop instead of the default translucent material.
         .presentationBackground(Color(.systemGroupedBackground))
+        .alert(
+            problemTitle,
+            isPresented: Binding(
+                get: { problem != nil },
+                set: { if !$0 { problem = nil } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(problemMessage)
+        }
     }
 }
 
-#Preview("New") {
-    LogPeriodSheet(draft: .new(startingOn: Date(), stats: CycleStore().stats))
-        .environment(CycleStore())
+#Preview("New", traits: .sampleData) {
+    LogPeriodSheet(
+        draft: .new(
+            startingOn: Date(),
+            stats: CycleStats(averageCycleLength: 28, averageBleedLength: 4, lastPeriod: nil)
+        )
+    )
 }
 
-#Preview("Edit") {
-    let store = CycleStore()
-    LogPeriodSheet(draft: .edit(store.records[0]))
-        .environment(store)
+// Built from a record rather than pulled out of the store, so the preview
+// doesn't depend on what order the sample data came back in.
+#Preview("Edit", traits: .sampleData) {
+    LogPeriodSheet(
+        draft: .edit(
+            Cycle(start: toDate("2026-09-04"), end: toDate("2026-09-07"))
+        )
+    )
 }

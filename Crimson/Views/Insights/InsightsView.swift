@@ -9,7 +9,7 @@ import SwiftUI
 import Charts
 
 struct InsightsView: View {
-    @Environment(CycleStore.self) var store
+    @Environment(CycleStore.self) var cycles
     @Environment(ProfileStore.self) var profile
     
     private let calendar = Calendar.current
@@ -18,15 +18,15 @@ struct InsightsView: View {
     /// Everything on this page is derived from the store's averages, so
     /// there's nothing to show until there are two periods to average.
     private var hasEnoughData: Bool {
-        store.stats.averageCycleLength > 0
+        cycles.stats.averageCycleLength > 0
     }
     
     private var position: CyclePosition? {
-        engine.position(on: Date(), from: store.stats)
+        engine.position(on: Date(), from: cycles.stats)
     }
     
     private var nextPeriod: Date? {
-        engine.nextPeriodStart(from: store.stats, onOrAfter: Date())
+        engine.nextPeriodStart(from: cycles.stats, onOrAfter: Date())
     }
     
     var body: some View {
@@ -58,14 +58,14 @@ struct InsightsView: View {
                         HistoryChartBoxView(
                             title: "Cycle length",
                             subtitle: "Days from one period start to the next",
-                            samples: store.cycleLengthHistory,
-                            average: store.stats.averageCycleLength
+                            samples: cycles.cycleLengthHistory,
+                            average: cycles.stats.averageCycleLength
                         )
                         HistoryChartBoxView(
                             title: "Period length",
                             subtitle: "Days of bleeding each period",
-                            samples: store.bleedLengthHistory,
-                            average: store.stats.averageBleedLength
+                            samples: cycles.bleedLengthHistory,
+                            average: cycles.stats.averageBleedLength
                         )
                         RecentPeriodList()
                     }
@@ -83,8 +83,6 @@ struct InsightsView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     InsightsView()
-        .environment(CycleStore())
-        .environment(ProfileStore(defaults: UserDefaults(suiteName: "preview")!))
 }

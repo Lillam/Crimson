@@ -1,0 +1,48 @@
+//
+//  SupportView.swift
+//  Crimson
+//
+//  Created by Liam Taylor on 24/09/2026.
+//
+
+import SwiftUI
+
+struct SupportSettingsView: View {
+    @State private var showingDonate: Bool = false
+    
+    var body: some View {
+        Text("Support")
+            .font(.system(size: 24, weight: .bold))
+            .foregroundColor(.black)
+            .padding(.top, 10)
+            .frame(maxWidth: .infinity, alignment: .leading)
+        Text("Crimson is free and always will be. If you'd like to chip in, here's where.")
+            .font(.system(size: 12))
+            .foregroundColor(.black.opacity(0.7))
+            .frame(maxWidth: .infinity, alignment: .leading)
+        CardView {
+            VStack(alignment: .leading, spacing: 0) {
+                Button(action: { showingDonate = true }) {
+                    HStack {
+                        Text("Feeling generous?")
+                        Spacer()
+                        Image(systemName: "heart")
+                    }
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundColor(.black)
+                }
+            }
+        }
+        .sheet(isPresented: $showingDonate) {
+            FeelingGenerousSheetView()
+                .presentationDragIndicator(.visible)
+        }
+    }
+}
+
+#Preview {
+    VStack (spacing: 20) {
+        SupportSettingsView()
+    }
+    .padding(20)
+}

@@ -23,18 +23,27 @@ struct RecentPeriodList: View {
                         Divider().overlay(.black.opacity(0.25))
                     }
                     HStack {
-                        Text(record.startDate.formatted(.dateTime.day().month(.abbreviated).year()))
+                        Text(record.start.formatted(.dateTime.day().month(.abbreviated).year()))
                             .foregroundColor(.black)
                         Spacer()
-                        Text(record.isOngoing
-                             ? "Ongoing"
-                             : "\(record.bleedLength ?? 0) \(record.bleedLength == 1 ? "day" : "days")")
-                        .foregroundColor(.black.opacity(0.75))
+                        Text(summary(for: record))
+                            .foregroundColor(.black.opacity(0.75))
                     }
                     .font(.system(size: 14))
                     .padding(.vertical, 10)
                 }
             }
         }
+    }
+
+    /// "Ongoing" while the period is still running, otherwise how long it
+    /// lasted. Pulled out of `body` because the ternary-inside-interpolation
+    /// version took the type-checker 13 seconds on its own.
+    private func summary(for cycle: Cycle) -> LocalizedStringKey {
+        guard let length = cycle.length else {
+            return "Ongoing"
+        }
+
+        return length == 1 ? "\(length) day" : "\(length) days"
     }
 }

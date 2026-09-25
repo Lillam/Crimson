@@ -6,25 +6,43 @@
 //
 
 import SwiftUI
+import SwiftData
 
 @main
 struct CrimsonApp: App {
     @State private var router: Router = Router()
-    @State private var store: CycleStore = CycleStore()
+    @State private var store: CycleStore
     @State private var profile: ProfileStore = ProfileStore()
-    @State private var entries: DayEntryStore = DayEntryStore()
     @State private var settings: SettingsStore = SettingsStore()
-    @State private var stores: Stores = Stores()
+    @State private var days: DayLogStore
+    
+    private let container: ModelContainer
+
+    init() {
+        do {
+            let container = try ModelContainer(for: CrimsonSchema.schema)
+            
+            self.container = container
+            
+            _store = State(initialValue: CycleStore(context: container.mainContext))
+            _days = State(initialValue: DayLogStore(context: container.mainContext))
+        } catch {
+            fatalError("Could not open the crimson database \(error)")
+        }
+    }
     
     var body: some Scene {
         WindowGroup {
             AppView()
                 .environment(router)
-                .environment(stores)
                 .environment(store)
                 .environment(profile)
-                .environment(entries)
                 .environment(settings)
+                .environment(days)
         }
+        // The container built in `init`, not a second one: `.modelContainer(for:)`
+        // would make its own, leaving the stores writing to one database and
+        // `@Query` reading another.
+        .modelContainer(container)
     }
 }

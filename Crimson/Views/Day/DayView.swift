@@ -9,7 +9,6 @@ import SwiftUI
 
 struct DayView: View {
     @Environment(CycleStore.self) var store
-    @Environment(DayEntryStore.self) var entries
     
     @State var selected: Date = Date()
     @State private var draft: PeriodDraft?
@@ -65,7 +64,7 @@ struct DayView: View {
     }
     
     /// The logged period the selected day falls inside, if any.
-    private var currentRecord: CycleRecord? {
+    private var currentRecord: Cycle? {
         store.record(containing: selected)
     }
     
@@ -80,10 +79,10 @@ struct DayView: View {
     
     /// An open period the selected day could close: it has to have started on
     /// or before the selected day.
-    private var endableRecord: CycleRecord? {
+    private var endableRecord: Cycle? {
         guard
             let open = store.openRecord,
-            calendar.startOfDay(for: selected) >= calendar.startOfDay(for: open.startDate)
+            calendar.startOfDay(for: selected) >= calendar.startOfDay(for: open.start)
         else {
             return nil
         }
@@ -99,7 +98,7 @@ struct DayView: View {
             let day = (
                 calendar.dateComponents(
                     [.day],
-                    from: calendar.startOfDay(for: record.startDate),
+                    from: calendar.startOfDay(for: record.start),
                     to: calendar.startOfDay(for: selected)
                 ).day ?? 0
             ) + 1
@@ -130,7 +129,7 @@ struct DayView: View {
     /// period, edit the one it's in, or log a new one starting there.
     private var action: (title: String, perform: () -> Void) {
         if let _ = endableRecord {
-            return ("Period Ended", { store.endPeriod(on: selected) })
+            return ("Period Ended", { try? store.endPeriod(on: selected) })
         } else if let record = currentRecord {
             return ("Edit Period", { draft = .edit(record) })
         } else {
@@ -218,14 +217,16 @@ struct DayView: View {
                     Text(headline.value)
                         .font(.system(size: 40, weight: .bold))
                         .foregroundColor(.white)
-                    Button(action: action.perform) {
-                        Text(action.title)
-                            .foregroundColor(.red)
+                    if !isFuture {
+                        Button(action: action.perform) {
+                            Text(action.title)
+                                .foregroundColor(.red)
+                        }
+                        .padding(.vertical, 10)
+                        .padding(.horizontal, 20)
+                        .background(.white)
+                        .cornerRadius(20)
                     }
-                    .padding(.vertical, 10)
-                    .padding(.horizontal, 20)
-                    .background(.white)
-                    .cornerRadius(20)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .padding(.top, 20)
@@ -233,11 +234,17 @@ struct DayView: View {
                 .background(.red)
                 VStack(spacing: 12) {
                     if let position {
-                        phaseCard(position)
+                        PhaseView(position: position)
                     }
                     
                     if isFuture {
-                        futureNote
+                        Text("This day hasn't happened yet — come back to log how it went.")
+                            .font(.system(size: 13))
+                            .foregroundColor(.black.opacity(0.75))
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding(15)
+                            .background(.white)
+                            .cornerRadius(12)
                     } else {
                         DayLogFormView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
                     }
@@ -278,47 +285,8 @@ struct DayView: View {
             LogPeriodSheet(draft: draft)
         }
     }
-    
-    /// One line of cycle context for the day: which phase it's in and what
-    /// that usually means.
-    @ViewBuilder
-    private func phaseCard(_ position: CyclePosition) -> some View {
-        let isLate = position.daysLate > 0
-        
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Text(isLate ? "Late" : position.phase.title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                Text("· Day \(position.day) of ~\(position.cycleLength)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.75))
-            }
-            Text(isLate
-                 ? "\(position.daysLate) \(position.daysLate == 1 ? "day" : "days") past your usual cycle length."
-                 : position.phase.summary)
-                .font(.system(size: 13))
-                .foregroundColor(.white.opacity(0.75))
-        }
-        .padding(15)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.red)
-        .cornerRadius(12)
-    }
-    
-    private var futureNote: some View {
-        Text("This day hasn't happened yet — come back to log how it went.")
-            .font(.system(size: 13))
-            .foregroundColor(.black.opacity(0.75))
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(15)
-            .background(DayLogFormView.cardColor)
-            .cornerRadius(12)
-    }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     DayView(selected: Date())
-        .environment(CycleStore())
-        .environment(DayEntryStore(fileURL: nil))
 }

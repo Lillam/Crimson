@@ -12,6 +12,8 @@ struct CalendarMonthSectionView: View {
     let month: Date
     /// How a given day should be drawn.
     let marking: (Date) -> DayMarking
+    /// Whether a given day can be tapped. Defaults to all of them.
+    var isEnabled: (Date) -> Bool = { _ in true }
     let onTap: (Date) -> Void
     
     private let columns = Array(repeating: GridItem(.flexible()), count: 7)
@@ -35,7 +37,11 @@ struct CalendarMonthSectionView: View {
                 // Day cells
                 ForEach(Array(dates.enumerated()), id: \.offset) { _, date in
                     if let date {
-                        CalendarDaySectionView(date: date, marking: marking(date)) {
+                        CalendarDaySectionView(
+                            date: date,
+                            marking: marking(date),
+                            isEnabled: isEnabled(date)
+                        ) {
                             onTap(date)
                         }
                     } else {
@@ -55,5 +61,4 @@ struct CalendarMonthSectionView: View {
         marking: { Calendar.current.isDateInToday($0) ? .period : .none },
         onTap: { _ in }
     )
-    .environment(DayEntryStore(fileURL: nil))
 }
