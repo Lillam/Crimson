@@ -9,32 +9,49 @@ import SwiftUI
 
 struct PhaseView: View {
     let position: CyclePosition
+    @State private var showingSheet: Bool = false
         
     private var isLate: Bool {
         position.daysLate > 0
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            HStack(spacing: 6) {
-                Text(isLate ? "Late" : position.phase.title)
-                    .font(.system(size: 16, weight: .semibold))
-                    .foregroundColor(.white)
-                Text("· Day \(position.day) of ~\(position.cycleLength)")
-                    .font(.system(size: 14))
-                    .foregroundColor(.white.opacity(0.9))
-            }
-            Text(isLate
-                 ? "\(position.daysLate) \(position.daysLate == 1 ? "day" : "days") past your usual cycle length."
-                 : position.phase.summary)
+        HStack {
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(isLate ? "Late" : position.phase.title)
+                        .font(.system(size: 16, weight: .semibold))
+                        .foregroundColor(.white)
+                    Text("· Day \(position.day) of ~\(position.cycleLength)")
+                        .font(.system(size: 14))
+                        .foregroundColor(.white.opacity(0.9))
+                }
+                Text(isLate
+                     ? "\(position.daysLate) \(position.daysLate == 1 ? "day" : "days") past your usual cycle length."
+                     : position.phase.summary)
                 .font(.system(size: 13))
                 .foregroundColor(.white.opacity(0.9))
+            }
+            Spacer()
+            Text("Read More")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundColor(.white.opacity(0.75))
         }
         .padding(15)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(position.tint)
-        .cornerRadius(12)
         .animation(.snappy(duration: 0.25), value: position.phase)
+        .onTapGesture {
+            showingSheet = true
+        }
+        .sheet(isPresented: $showingSheet) {
+            switch position.phase {
+            case .menstrual: MenstrualPhaseSheet(phase: position.phase)
+            case .follicular: FollicularPhaseSheet(phase: position.phase)
+            case .fertile: OvulationPhaseSheet(phase: position.phase)
+            case .luteal: LutealPhaseSheet(phase: position.phase)
+            }
+        }
     }
 }
 
@@ -54,6 +71,6 @@ struct PhaseView: View {
             PhaseView(position: position(onDay: 20))  // Luteal
             PhaseView(position: position(onDay: 31))  // Late — overrides to red
         }
-        .padding(20)
+//        .padding(20)
     }
 }

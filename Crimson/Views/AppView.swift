@@ -87,17 +87,21 @@ struct AppView: View {
         }
         .ignoresSafeArea(.keyboard)
         .background(AppColor.page.ignoresSafeArea())
-        // First run only: a sheet, like the donate page, so it can be swiped
-        // away as well as skipped or filled in. However it's closed, the
-        // welcome counts as seen — `onDismiss` catches the swipe, which the
-        // buttons' own `completeWelcome()` has already handled. Editing the
-        // profile later presents the same sheet from Settings instead.
+        // On the first run only, show the user a sheet which will be a welcome
+        // sheet to the application. This is possible to be swiped away and
+        // skipped/ignored. And regardless of how it's closed, it will always
+        // create the user with empty values allowing the user to modify this
+        // in the settings page later, whenever they desire it.
         .sheet(isPresented: Binding(
-            get: { !profile.hasProfile },
-            // Whatever closed it — Save, Skip, or a swipe — a profile now
-            // exists, so `get` turns false and it doesn't come back.
+            get: {
+                !profile.hasProfile
+            },
+            // Regardless of how this was closed, we're going to want to create
+            // the user so that this sheet never shows again.
             set: { presented in
-                if !presented { profile.createProfile() }
+                if !presented {
+                    profile.createProfile()
+                }
             }
         )) {
             WelcomeSheetView()

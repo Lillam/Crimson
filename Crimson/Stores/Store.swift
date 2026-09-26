@@ -16,6 +16,9 @@ import SwiftData
         load()
     }
     
+    /// The store must have a way of getting data and loading into the
+    /// store in question, this data will be needed for the application to
+    /// function as intended.
     func load() {
         fatalError("subclass must override load")
     }

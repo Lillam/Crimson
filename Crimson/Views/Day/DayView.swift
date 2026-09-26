@@ -19,7 +19,7 @@ struct DayView: View {
     private let engine = CycleEngine()
     
     /// How far a swipe has to travel before it counts as a page turn.
-    private let swipeThreshold: CGFloat = 50
+    private let swipeThreshold: CGFloat = 100
     
     private var weekStart: Date? {
         calendar.dateInterval(of: .weekOfYear, for: selected)?.start
@@ -245,22 +245,30 @@ struct DayView: View {
                             .padding(15)
                             .background(AppColor.card)
                             .cornerRadius(12)
+                            .padding(.bottom, 20)
+                            .frame(maxHeight: .infinity)
+                            .padding(.horizontal, 20)
+                        
                     } else {
                         DayLogFormView(date: selected, isPeriodDay: currentRecord != nil, notesFocused: $notesFocused)
+                            .padding(20)
                     }
                 }
-                .padding(20)
-                .padding(.bottom, 50) // scroll clear of the floating tab bar
+                .padding(.bottom, 50)
                 .background(AppColor.page)
             }
             .scrollIndicators(.hidden)
             .scrollDismissesKeyboard(.interactively)
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             // A bounce reveals whatever sits behind the scroll view, so that
-            // backdrop is split down the middle: overscrolling at the top
-            // carries the red header on, while the bottom bounce stays white
-            // like the log above it. Neither half is ever seen otherwise —
-            // the content's own backgrounds cover it.
+            // backdrop is split: overscrolling at the top carries the red
+            // header on, while the bottom bounce stays page-coloured like the
+            // log above it. Neither part is ever seen otherwise — the
+            // content's own backgrounds cover it.
+            //
+            // Two gradient stops at the same location give a hard edge at an
+            // arbitrary ratio, which stacked colours can't do without a
+            // GeometryReader and the extra layout pass that comes with it.
             .background {
                 VStack(spacing: 0) {
                     Color.red

@@ -110,8 +110,7 @@ struct FeelingGenerousSheetView: View {
                 .padding(.top, 10)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.vertical, 30)
-            .padding(.horizontal, 30)
+            .padding(30)
         }
         .scrollIndicators(.hidden)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
