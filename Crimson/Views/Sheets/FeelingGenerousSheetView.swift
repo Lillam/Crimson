@@ -87,7 +87,6 @@ struct FeelingGenerousSheetView: View {
                         .font(.system(size: 16))
                         .foregroundColor(.white.opacity(0.85))
                 }
-
                 
                 VStack(spacing: 10) {
                     ForEach(options) { option in

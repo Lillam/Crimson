@@ -8,6 +8,8 @@
 import SwiftUI
 
 struct DataSettingsView: View {
+    @State private var showingDeleteSheet: Bool = false
+    
     var body: some View {
         Text("Data")
             .font(.system(size: 24, weight: .bold))
@@ -28,7 +30,7 @@ struct DataSettingsView: View {
                     .foregroundColor(AppColor.ink)
                 }
                 Divider().overlay(AppColor.ink.opacity(0.3))
-                Button(action: { }) {
+                Button(action: { showingDeleteSheet = true }) {
                     HStack {
                         Text("Erase my data")
                         Spacer()
@@ -38,10 +40,14 @@ struct DataSettingsView: View {
                 }
             }
         }
+        .sheet(isPresented: $showingDeleteSheet) {
+            DeleteDataSheet()
+                .presentationDragIndicator(.visible)
+        }
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     VStack (spacing: 20) {
         DataSettingsView()
     }

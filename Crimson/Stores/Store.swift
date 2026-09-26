@@ -17,7 +17,7 @@ import SwiftData
     }
     
     func load() {
-        fatalError("subclass msut override load")
+        fatalError("subclass must override load")
     }
     
     /// utility helper function for better readability. reload reads better
@@ -26,20 +26,10 @@ import SwiftData
         load()
     }
     
-    // MARK - data handling
-    
     func insert(_ item: Model) throws {
         context.insert(item)
         save(reload: true)
     }
-    
-//    func update(_ item: Model) throws {
-//        
-//    }
-//    
-//    func delete() throws {
-//        
-//    }
     
     func save(reload: Bool = false) {
         do {
@@ -52,6 +42,14 @@ import SwiftData
             }
         } catch {
             assertionFailure("\(error)")
+        }
+    }
+    
+    func clear() {
+        do {
+            try context.delete(model: Model.self)
+        } catch {
+            assertionFailure("Could not clear the store: [\(Model.self)] \(error)")
         }
     }
 }

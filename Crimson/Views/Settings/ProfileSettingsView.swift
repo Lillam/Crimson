@@ -10,7 +10,6 @@ import SwiftUI
 struct ProfileSettingsView: View {
     @Environment(ProfileStore.self) var profile
     @State private var editingProfile = false
-    @State private var confirmingDelete = false
         
     var body: some View {
         Text("Profile")
@@ -46,25 +45,6 @@ struct ProfileSettingsView: View {
                         Image(systemName: "chevron.right")
                     }
                     .foregroundColor(AppColor.ink)
-                }
-                Divider().overlay(AppColor.ink.opacity(0.3))
-                Button(action: { confirmingDelete = true }) {
-                    HStack {
-                        Text("Delete profile")
-                        Spacer()
-                        Image(systemName: "trash")
-                    }
-                    .foregroundColor(AppColor.ink)
-                }
-                .confirmationDialog(
-                    "Delete your profile?",
-                    isPresented: $confirmingDelete,
-                    titleVisibility: .visible
-                ) {
-                    Button("Delete profile", role: .destructive, action: profile.deleteProfile)
-                    Button("Cancel", role: .cancel) {}
-                } message: {
-                    Text("Your name and birthday will be removed, and you'll be taken through the welcome screen again the next time you open the app. Your logged periods are not affected.")
                 }
             }
         }

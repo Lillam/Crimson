@@ -34,16 +34,9 @@ struct InsightsView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text("Insights")
-                    .font(.system(size: 30, weight: .bold))
-                    .foregroundColor(AppColor.ink)
-                Text(profile.displayName.map { "How your cycle's looking, \($0)." } ?? "How your cycle's looking.")
-                    .font(.system(size: 14))
-                    .foregroundColor(AppColor.ink.opacity(0.75))
-            }
-            ScrollView {
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                PageTitle(title: "Insights", subtitle: profile.displayName.map { "How your cycle's looking, \($0)." } ?? "How your cycle's looking.")
                 VStack(alignment: .leading, spacing: 20) {
                     if !hasEnoughData {
                         CardView {
@@ -91,7 +84,7 @@ struct InsightsView: View {
                     MoodTrendView(scope: scope)
                     MoodByPhaseView(scope: scope)
                 }
-                .padding(.bottom, 70)
+                .padding(.bottom, 100)
             }
         }
         .scrollIndicators(.hidden)
@@ -101,6 +94,7 @@ struct InsightsView: View {
         .padding(.top, 20)
         .padding(.horizontal, 20)
         .background(AppColor.page)
+        .ignoresSafeArea()
     }
 }
 

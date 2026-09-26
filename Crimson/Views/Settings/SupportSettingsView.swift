@@ -40,7 +40,7 @@ struct SupportSettingsView: View {
     }
 }
 
-#Preview {
+#Preview(traits: .sampleData) {
     VStack (spacing: 20) {
         SupportSettingsView()
     }

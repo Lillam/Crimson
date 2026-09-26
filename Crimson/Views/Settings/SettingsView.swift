@@ -9,29 +9,25 @@ import SwiftUI
 
 struct SettingsView: View {
     var body: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            Text("Settings")
-                .font(.system(size: 30, weight: .bold))
-                .foregroundColor(AppColor.ink)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 20) {                
-                    ProfileSettingsView()
-                    ThemeSettingsView()
-                    CalendarSettingsView()
-                    DataSettingsView()
-                    SupportSettingsView()
-                }
-                .frame(maxWidth: .infinity, alignment: .top)
-                .padding(.bottom, 70)
+        ScrollView {
+            VStack(alignment: .leading, spacing: 20) {
+                PageTitle(title: "Settings")
+                ProfileSettingsView()
+                ThemeSettingsView()
+                CalendarSettingsView()
+                DataSettingsView()
+                SupportSettingsView()
             }
-            .scrollIndicators(.hidden)
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .frame(maxWidth: .infinity, alignment: .top)
+            .padding(.bottom, 100)
         }
+        .scrollIndicators(.hidden)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .padding(.top, 20)
         .padding(.horizontal, 20)
-        .background(AppColor.page)        
+        .background(AppColor.page)
+        .ignoresSafeArea()
     }
-
 }
 
 #Preview(traits: .sampleData) {

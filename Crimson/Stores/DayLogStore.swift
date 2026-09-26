@@ -8,16 +8,8 @@
 import SwiftData
 import Foundation
 
-@Observable
-final class DayLogStore {
-    private let context: ModelContext
-
+@Observable final class DayLogStore : Store<DayLog> {
     private(set) var logs: [String: DayLog] = [:]
-
-    init(context: ModelContext) {
-        self.context = context
-        reload()
-    }
 
     private func load(from start: Date, to end: Date) {
         let lower = CalendarDay.stored(from: start)
@@ -36,7 +28,7 @@ final class DayLogStore {
         }) { _, latest in latest }
     }
 
-    private func reload() {
+    override func load() {
         let fetched = (try? context.fetch(
             FetchDescriptor<DayLog>(sortBy: [SortDescriptor(\.storedDate)])
         )) ?? []
@@ -96,14 +88,6 @@ final class DayLogStore {
         context.delete(log)
         logs[key(for: date)] = nil
         save()
-    }
-    
-    func clear() {
-        do {
-            try context.delete(model: DayLog.self)
-        } catch {
-            assertionFailure("Could not clear the day log: \(error)")
-        }
     }
 
     private func save() {

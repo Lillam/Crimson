@@ -62,14 +62,17 @@ struct CalendarSettingsView: View {
                         }
                         Spacer()
                         HStack(spacing: 10) {
+                            let subtractDisabled = !(years > bounds.lowerBound)
+                            let addDisabled = !(years < bounds.upperBound)
+                            
                             Button(action: { settings.adjustCalendarYears(by: -1) }) {
                                 Image(systemName: "minus")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(AppColor.ink.opacity((years > bounds.lowerBound) ? 1 : 0.3))
+                                    .foregroundColor(AppColor.ink.opacity(!subtractDisabled ? 1 : 0.2))
                                     .frame(width: 34, height: 34)
-                                    .background(AppColor.ink.opacity(0.15), in: Circle())
+                                    .background(AppColor.ink.opacity(subtractDisabled ? 0.05 : 0.15), in: Circle())
                             }
-                            .disabled(!(years > bounds.lowerBound))
+                            .disabled(subtractDisabled)
                             
                             Text("\(years)")
                                 .font(.system(size: 16, weight: .semibold))
@@ -80,11 +83,11 @@ struct CalendarSettingsView: View {
                             Button(action: { settings.adjustCalendarYears(by: 1) }) {
                                 Image(systemName: "plus")
                                     .font(.system(size: 14, weight: .bold))
-                                    .foregroundColor(AppColor.ink.opacity(years < bounds.upperBound ? 1 : 0.3))
+                                    .foregroundColor(AppColor.ink.opacity(!addDisabled ? 1 : 0.3))
                                     .frame(width: 34, height: 34)
-                                    .background(AppColor.ink.opacity(0.15), in: Circle())
+                                    .background(AppColor.ink.opacity(addDisabled ? 0.05 : 0.15), in: Circle())
                             }
-                            .disabled(!(years < bounds.upperBound))
+                            .disabled(addDisabled)
                         }
                     }
                     .font(.system(size: 16))
