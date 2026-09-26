@@ -92,14 +92,17 @@ struct AppView: View {
         // welcome counts as seen — `onDismiss` catches the swipe, which the
         // buttons' own `completeWelcome()` has already handled. Editing the
         // profile later presents the same sheet from Settings instead.
-        .sheet(
-            isPresented: $profile.isWelcomePresented,
-            onDismiss: profile.completeWelcome
-        ) {
+        .sheet(isPresented: Binding(
+            get: { !profile.hasProfile },
+            // Whatever closed it — Save, Skip, or a swipe — a profile now
+            // exists, so `get` turns false and it doesn't come back.
+            set: { presented in
+                if !presented { profile.createProfile() }
+            }
+        )) {
             WelcomeSheetView()
                 .presentationDragIndicator(.visible)
         }
-        .onAppear(perform: profile.presentWelcomeIfNeeded)
     }
 }
 

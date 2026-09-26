@@ -15,7 +15,7 @@ import SwiftUI
 /// Settings whenever the profile is edited. It closes itself either way, so
 /// whoever presented it decides what dismissal means.
 struct WelcomeSheetView: View {
-    @Environment(ProfileStore.self) var profile
+    @Environment(ProfileStore.self) var profileStore
     @Environment(\.dismiss) private var dismiss
     
     @State private var name: String = ""
@@ -37,18 +37,28 @@ struct WelcomeSheetView: View {
     }
     
     private var isReturning: Bool {
-        profile.hasSeenWelcome || profile.displayName != nil
+        profileStore.profile != nil
     }
     
     private func finish() {
-        profile.name = name
-        profile.birthday = includesBirthday ? Birthday(day: min(day, daysInMonth), month: month) : nil
-        profile.completeWelcome()
+        // Goes through the store rather than mutating `profile` directly: on
+        // first run there is no row yet, so this has to create one as well as
+        // write to it.
+        profileStore.update(
+            name: name,
+            birthday: includesBirthday
+                ? User.Birthday(day: min(day, daysInMonth), month: month)
+                : nil
+        )
+
         dismiss()
     }
     
+    /// Skipping still creates the profile — an empty one. Without it there'd
+    /// be no row, and the welcome would come back on the next launch having
+    /// just been dismissed.
     private func skip() {
-        profile.completeWelcome()
+        profileStore.createProfile()
         dismiss()
     }
     
@@ -161,7 +171,12 @@ struct WelcomeSheetView: View {
         .onTapGesture { nameFocused = false }
         .onAppear {
             // Prefill when coming back through from Settings.
-            name = profile.name
+            guard let profile = profileStore.profile else {
+                return
+            }
+            
+            name = profile.name ?? ""
+            
             if let birthday = profile.birthday {
                 includesBirthday = true
                 day = birthday.day

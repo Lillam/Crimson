@@ -65,8 +65,7 @@ enum CalendarRange: Equatable {
 
 /// App preferences — how Crimson behaves rather than who's using it (that's
 /// `ProfileStore`). Persisted in `UserDefaults`, same as the profile.
-@Observable
-final class SettingsStore {
+@Observable final class SettingsStore {
     private let defaults: UserDefaults
 
     private enum Key {

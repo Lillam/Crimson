@@ -10,7 +10,7 @@ import Charts
 
 struct InsightsView: View {
     @Environment(CycleStore.self) var cycles
-    @Environment(ProfileStore.self) var profile
+    @Environment(ProfileStore.self) var profileStore
     
     /// How far back the day-log cards look. The cycle cards above them are
     /// unaffected — those are built from averages over everything logged.
@@ -18,6 +18,14 @@ struct InsightsView: View {
     
     private let calendar = Calendar.current
     private let engine = CycleEngine()
+    
+    private var pageSubtitle: String {
+        guard let profile = profileStore.profile, let displayName = profile.displayName else {
+            return "How your cycle's looking"
+        }
+        
+        return "How your cycle's looking \(displayName)"
+    }
     
     /// Everything on this page is derived from the store's averages, so
     /// there's nothing to show until there are two periods to average.
@@ -36,7 +44,7 @@ struct InsightsView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                PageTitle(title: "Insights", subtitle: profile.displayName.map { "How your cycle's looking, \($0)." } ?? "How your cycle's looking.")
+                PageTitle(title: "Insights", subtitle: pageSubtitle)
                 VStack(alignment: .leading, spacing: 20) {
                     if !hasEnoughData {
                         CardView {

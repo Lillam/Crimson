@@ -15,7 +15,7 @@ struct DeleteDataSheet: View {
     // out of the database that these stores control.
     @Environment(CycleStore.self) private var cycleStore
     @Environment(DayLogStore.self) private var dayLogStore
-    @Environment(ProfileStore.self) private var profielStore
+    @Environment(ProfileStore.self) private var profileStore
     
     var body: some View {
         ScrollView {
@@ -97,7 +97,9 @@ struct DeleteDataSheet: View {
     }
     
     private func deleteProfileData() -> Void {
-        print("profile data deleted...")
+        // Removing the row is what makes the welcome ask again — there's no
+        // separate flag to reset.
+        profileStore.deleteProfile()
     }
 }
 

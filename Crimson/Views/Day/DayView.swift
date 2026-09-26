@@ -250,7 +250,7 @@ struct DayView: View {
                     }
                 }
                 .padding(20)
-                .padding(.bottom, 70) // scroll clear of the floating tab bar
+                .padding(.bottom, 50) // scroll clear of the floating tab bar
                 .background(AppColor.page)
             }
             .scrollIndicators(.hidden)

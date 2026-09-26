@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct ProfileSettingsView: View {
-    @Environment(ProfileStore.self) var profile
+    @Environment(ProfileStore.self) var profileStore
     @State private var editingProfile = false
         
     var body: some View {
@@ -26,7 +26,7 @@ struct ProfileSettingsView: View {
                     Text("Name")
                         .foregroundColor(AppColor.ink)
                     Spacer()
-                    Text(profile.displayName ?? "Not Set")
+                    Text(profileStore.getProfile().displayName ?? "Not Set")
                         .foregroundColor(AppColor.ink)
                 }
                 Divider().overlay(AppColor.ink.opacity(0.3))
@@ -34,7 +34,7 @@ struct ProfileSettingsView: View {
                     Text("Birthday")
                         .foregroundColor(AppColor.ink)
                     Spacer()
-                    Text(profile.birthday?.formatted ?? "Not Set")
+                    Text(profileStore.getProfile().birthday?.formatted ?? "Not Set")
                         .foregroundColor(AppColor.ink)
                 }
                 Divider().overlay(AppColor.ink.opacity(0.3))

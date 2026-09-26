@@ -5,102 +5,70 @@
 //  Created by Liam Taylor on 17/09/2026.
 //
 
+import SwiftData
 import Foundation
 
-/// A day and month with no year — enough to say happy birthday, and nothing
-/// more personal than that.
-struct Birthday: Equatable, Codable {
-    var day: Int
-    var month: Int
-    
-    /// Whether `date` falls on this birthday.
-    func matches(_ date: Date, calendar: Calendar = .current) -> Bool {
-        let components = calendar.dateComponents([.day, .month], from: date)
-        return components.day == day && components.month == month
-    }
-    
-    /// "14 March"
-    var formatted: String {
-        let calendar = Calendar.current
-        let monthName = calendar.monthSymbols[max(0, min(month - 1, 11))]
-        return "\(day) \(monthName)"
-    }
-}
+@Observable final class ProfileStore: Store<User> {
+    private(set) var profile: User?
 
-/// The little the app knows about the person using it, persisted in
-/// `UserDefaults`. Purely for personalisation — none of it affects the cycle
-/// maths.
-@Observable
-final class ProfileStore {
-    private let defaults: UserDefaults
-    
-    private enum Key {
-        static let name = "profile.name"
-        static let birthday = "profile.birthday"
-        static let hasSeenWelcome = "profile.hasSeenWelcome"
+    override func load() {
+        profile = first()
     }
-    
-    /// Whatever the user wants to be called. Free text, no validation.
-    var name: String {
-        didSet { defaults.set(name, forKey: Key.name) }
+
+    /// Whether they've been through the welcome at all.
+    var hasProfile: Bool {
+        profile != nil
     }
-    
-    var birthday: Birthday? {
-        didSet {
-            if let data = try? JSONEncoder().encode(birthday) {
-                defaults.set(data, forKey: Key.birthday)
-            } else {
-                defaults.removeObject(forKey: Key.birthday)
-            }
+
+    /// The profile to read for display.
+    ///
+    /// Hands back a blank, *un-inserted* `User` when there isn't one yet, so
+    /// that merely rendering the settings page doesn't create a row and
+    /// silently dismiss the welcome. Writes go through `update` instead.
+    func getProfile() -> User {
+        profile ?? User()
+    }
+
+    /// Makes sure a row exists, so the welcome doesn't ask again.
+    ///
+    /// Idempotent: closing the sheet twice, or skipping after saving, can't
+    /// produce a second profile.
+    @discardableResult
+    func createProfile() -> User? {
+        guard profile == nil else {
+            return profile
         }
-    }
-    
-    /// Persisted: whether the user has been through (or skipped) the welcome.
-    /// Checked once at launch to decide whether to present it.
-    var hasSeenWelcome: Bool {
-        didSet { defaults.set(hasSeenWelcome, forKey: Key.hasSeenWelcome) }
-    }
-    
-    /// Not persisted: whether the first-run welcome is on screen right now.
-    /// Only the app view uses this — editing the profile later presents the
-    /// same sheet from Settings, off that page's own state.
-    var isWelcomePresented = false
-    
-    init(defaults: UserDefaults = .standard) {
-        self.defaults = defaults
-        name = defaults.string(forKey: Key.name) ?? ""
-        birthday = defaults.data(forKey: Key.birthday).flatMap {
-            try? JSONDecoder().decode(Birthday.self, from: $0)
+
+        do {
+            try insert(User())
+        } catch {
+            assertionFailure("Could not create the profile: \(error)")
         }
-        hasSeenWelcome = defaults.bool(forKey: Key.hasSeenWelcome)
+
+        return profile
     }
-    
-    /// The name with surrounding whitespace removed, or nil if they didn't give one.
-    var displayName: String? {
-        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? nil : trimmed
+
+    /// Writes the name and birthday, creating the row first if this is the
+    /// first time through the welcome.
+    func update(name: String, birthday: User.Birthday?) {
+        guard let profile = createProfile() else {
+            return
+        }
+
+        profile.name = name
+        profile.birthday = birthday
+
+        save(reload: true)
     }
-    
-    func isBirthday(_ date: Date) -> Bool {
-        birthday?.matches(date) ?? false
-    }
-    
-    /// Called once when the app view first appears.
-    func presentWelcomeIfNeeded() {
-        isWelcomePresented = !hasSeenWelcome
-    }
-    
-    /// Finishing or skipping the welcome.
-    func completeWelcome() {
-        hasSeenWelcome = true
-        isWelcomePresented = false
-    }
-    
-    /// Forgets everything and arranges for the welcome to run again the next
-    /// time the app is opened. Deliberately doesn't present it now.
+
+    /// Forgets them entirely. The welcome will ask again, because there's no
+    /// longer a row to say otherwise.
     func deleteProfile() {
-        name = ""
-        birthday = nil
-        hasSeenWelcome = false
+        guard let profile else {
+            return
+        }
+
+        context.delete(profile)
+        save(reload: true)
     }
 }

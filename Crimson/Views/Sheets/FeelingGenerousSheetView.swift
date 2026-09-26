@@ -62,7 +62,7 @@ struct FeelingGenerousSheetView: View {
     /// "Feeling generous, Liam?" when we know the name, and a plain ask when
     /// we don't.
     private var title: String {
-        if let name = profile.displayName {
+        if let name = profile.getProfile().displayName {
             return "Feeling generous, \(name)?"
         }
 

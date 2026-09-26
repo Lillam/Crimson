@@ -26,6 +26,15 @@ import SwiftData
         load()
     }
     
+    /// regardless of the limits on the data unit, all we're wanting is the very first item
+    /// this is mainly useful at the moment for the <ProfileStore> which only cares
+    /// for ever only having one entry in that whole database.
+    func first() -> Model? {
+        var descriptor = FetchDescriptor<Model>()
+        descriptor.fetchLimit = 1
+        return try? context.fetch(descriptor).first
+    }
+    
     func insert(_ item: Model) throws {
         context.insert(item)
         save(reload: true)

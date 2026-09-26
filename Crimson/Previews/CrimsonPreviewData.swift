@@ -44,7 +44,7 @@ struct CrimsonPreviewData: PreviewModifier {
             router: Router(),
             cycles: CycleStore(context: container.mainContext),
             days: DayLogStore(context: container.mainContext),
-            profile: ProfileStore(defaults: .preview),
+            profile: ProfileStore(context: container.mainContext),
             settings: SettingsStore(defaults: .preview)
         )
     }

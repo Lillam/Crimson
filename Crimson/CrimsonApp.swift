@@ -12,7 +12,7 @@ import SwiftData
 struct CrimsonApp: App {
     @State private var router: Router = Router()
     @State private var store: CycleStore
-    @State private var profile: ProfileStore = ProfileStore()
+    @State private var profile: ProfileStore
     @State private var settings: SettingsStore = SettingsStore()
     @State private var days: DayLogStore
     
@@ -26,6 +26,7 @@ struct CrimsonApp: App {
             
             _store = State(initialValue: CycleStore(context: container.mainContext))
             _days = State(initialValue: DayLogStore(context: container.mainContext))
+            _profile = State(initialValue: ProfileStore(context: container.mainContext))
         } catch {
             fatalError("Could not open the crimson database \(error)")
         }

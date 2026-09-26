@@ -16,7 +16,7 @@ import SwiftData
 /// existing row rather than inserting a second.
 @Model
 final class User {
-    var name: String = ""
+    var name: String? = ""
 
     /// Day and month only — stored as two numbers rather than a date, because
     /// there is no year to anchor one to. Read and written through `birthday`.
@@ -49,6 +49,10 @@ final class User {
     /// The name with surrounding whitespace removed, or nil if they didn't
     /// give one. What the UI should address them by.
     var displayName: String? {
+        guard let name = name else {
+            return nil
+        }
+        
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         return trimmed.isEmpty ? nil : trimmed
     }

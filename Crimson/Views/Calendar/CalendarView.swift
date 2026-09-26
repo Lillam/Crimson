@@ -10,7 +10,7 @@ import SwiftUI
 struct CalendarView: View {
     @Environment(Router.self) var router
     @Environment(CycleStore.self) var store
-    @Environment(ProfileStore.self) var profile
+    @Environment(ProfileStore.self) var profileStore
     @Environment(SettingsStore.self) var settings
     
     /// How many months past the current one have been loaded. Only ever grows,
@@ -174,7 +174,7 @@ struct CalendarView: View {
     /// What the status line says when not selecting: a birthday greeting on
     /// the day itself, otherwise the next projected period.
     private var idleStatus: String {
-        if profile.isBirthday(Date()) {
+        if let profile = profileStore.profile, profile.isBirthday(Date()) {
             return "Happy birthday\(profile.displayName.map { ", \($0)" } ?? "")! 🎂"
         }
         
