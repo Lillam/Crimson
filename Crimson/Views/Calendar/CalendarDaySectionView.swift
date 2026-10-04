@@ -74,11 +74,11 @@ struct CalendarDaySectionView: View {
                 case .predicted:
                     // projected days get a soft wash inside the dotted ring,
                     // well short of a logged day
-                    projectedCircle(.red.opacity(0.075))
+                    projectedCircle(AppColor.projectionRed)
                 case .predictedMargin:
                     // days the period could shift onto get a different wash,
                     // so "likely" and "possible" read apart
-                    projectedCircle(.yellow.opacity(0.075))
+                    projectedCircle(AppColor.projectionYellow)
                 case .none:
                     if isToday {
                         Circle().strokeBorder(AppColor.ink, lineWidth: 1.5)

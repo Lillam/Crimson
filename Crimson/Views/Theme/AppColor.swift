@@ -32,4 +32,14 @@ enum AppColor {
         light: Color(red: 241/255, green: 241/255, blue: 241/255),
         dark: Color(red: 0.22, green: 0.22, blue: 0.23)
     )
+    
+    static let projectionRed = Color.adaptive(
+        light: .red.opacity(0.075),
+        dark: .red.opacity(0.15)
+    )
+    
+    static let projectionYellow = Color.adaptive(
+        light: .yellow.opacity(0.075),
+        dark: .yellow.opacity(0.15)
+    )
 }

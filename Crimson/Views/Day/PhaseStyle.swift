@@ -23,9 +23,10 @@ extension CyclePhase {
     var tint: Color {
         switch self {
         case .menstrual:  Color(.red).opacity(0.85)
-        case .follicular: Color(.magenta)
-        case .ovulation:  Color(.purple)
-        case .luteal:     Color(.indigo)
+        case .follicular: Color(.cyan)
+        case .ovulation:  Color(.green)
+//        case .luteal:     Color(.indigo)
+        case .luteal:     Color(red: 241 / 255, green: 146 / 255, blue: 185 / 255) // soft pink.
         }
     }
 }
