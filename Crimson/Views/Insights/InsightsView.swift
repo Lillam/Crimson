@@ -11,10 +11,15 @@ import Charts
 struct InsightsView: View {
     @Environment(CycleStore.self) var cycles
     @Environment(ProfileStore.self) var profileStore
+    @Environment(DayLogStore.self) var days
     
     /// How far back the day-log cards look. The cycle cards above them are
     /// unaffected — those are built from averages over everything logged.
     @State private var scope: InsightsScope = .twelveMonths
+
+    private var daysLogged: Int {
+        days.logs(since: scope.start()).count
+    }
     
     private let calendar = Calendar.current
     private let engine = CycleEngine()
@@ -75,22 +80,24 @@ struct InsightsView: View {
                         RecentPeriodList()
                     }
                     
-                    // One control, sitting above everything it governs.
-                    HStack {
-                        Text("Daily logs")
-                            .font(.system(size: 16, weight: .semibold))
-                            .foregroundColor(AppColor.ink)
+                    if daysLogged > 0 {
+                        // One control, sitting above everything it governs.
+                        HStack {
+                            Text("Daily logs")
+                                .font(.system(size: 16, weight: .semibold))
+                                .foregroundColor(AppColor.ink)
+                            
+                            Spacer()
+                            
+                            ScopePickerView(scope: $scope)
+                        }
+                        .padding(.top, 10)
                         
-                        Spacer()
-                        
-                        ScopePickerView(scope: $scope)
+                        LoggingStatView(scope: scope)
+                        SymptomFrequencyView(scope: scope)
+                        MoodTrendView(scope: scope)
+                        MoodByPhaseView(scope: scope)
                     }
-                    .padding(.top, 10)
-                    
-                    LoggingStatView(scope: scope)
-                    SymptomFrequencyView(scope: scope)
-                    MoodTrendView(scope: scope)
-                    MoodByPhaseView(scope: scope)
                 }
                 .padding(.bottom, 100)
             }

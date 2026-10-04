@@ -52,6 +52,10 @@ enum LogOutcome {
         records.sorted { $0.start < $1.start }
     }
     
+    /// A gap longer than this between logged periods is treated as a missed
+    /// log rather than a cycle, and left out of the average.
+    private let longestPlausibleCycle = 45
+
     private func makeStats() -> CycleStats {
         let sorted = sortedRecords
         var cycleLengths: [Int] = []
@@ -65,7 +69,7 @@ enum LogOutcome {
             if let cycleLength = getCycleLengthFromRecords(
                 from: record,
                 to: index == 0 ? nil : sorted[index - 1]
-            ) {
+            ), cycleLength <= longestPlausibleCycle {
                 cycleLengths.append(cycleLength)
             }
         }
@@ -87,13 +91,33 @@ enum LogOutcome {
     
     /// Length of each completed cycle, keyed on the period that started it.
     /// The most recent period has no next start yet, so it's not included.
+    /// Gaps longer than `longestPlausibleCycle` are left out, the same as in
+    /// the average, so the chart and stats don't show a missed log as a cycle.
     var cycleLengthHistory: [CycleSample] {
         let sorted = sortedRecords
         return zip(sorted, sorted.dropFirst()).compactMap { record, next in
-            getCycleLengthFromRecords(from: next, to: record).map {
-                CycleSample(id: record.id, start: record.start, days: $0)
+            guard let days = getCycleLengthFromRecords(from: next, to: record),
+                  days <= longestPlausibleCycle else {
+                return nil
             }
+
+            return CycleSample(id: record.id, start: record.start, days: days)
         }
+    }
+
+    /// How many days either way a period tends to land from the average:
+    /// half the spread between the shortest and longest cycle, rounded up.
+    /// Nil until there are at least two cycles to compare.
+    var cycleVariation: Int? {
+        let lengths = cycleLengthHistory.map(\.days)
+
+        guard let shortest = lengths.min(),
+              let longest = lengths.max(), lengths.count >= 2
+        else {
+            return nil
+        }
+
+        return Int((Double(longest - shortest) / 2).rounded(.up))
     }
     
     /// Length of each finished period.

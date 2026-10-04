@@ -19,6 +19,8 @@ struct CalendarSettingsView: View {
     }
     
     var body: some View {
+        @Bindable var settings = settings
+        
         Text("Calendar")
             .font(.system(size: 24, weight: .bold))
             .foregroundColor(AppColor.ink)
@@ -53,8 +55,8 @@ struct CalendarSettingsView: View {
                                 .font(.system(size: 16, weight: .semibold))
                                 .foregroundColor(AppColor.ink)
                             Text("Increasing this value may cause a drop in performance, increase this value at your own risk.")
-                                .font(.system(size: 10))
-                                .foregroundColor(AppColor.ink.opacity(0.8))
+                                .font(.system(size: 12))
+                                .foregroundColor(AppColor.ink.opacity(0.7))
                         }
                         Spacer()
                         HStack(spacing: 10) {
@@ -89,13 +91,16 @@ struct CalendarSettingsView: View {
                     .font(.system(size: 16))
                 }
                 Divider().overlay(AppColor.ink.opacity(0.3))
-                VStack(alignment: .leading) {
-                    Toggle(isOn: isCalendarUnbounded) {
-                        Text("Ignore Missed Months")
+                VStack(alignment: .leading, spacing: 10) {
+                    Toggle(isOn: $settings.showsCalendarVariation) {
+                        Text("Show variation")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(AppColor.ink)
                     }
                     .tint(.green)
+                    Text("Highlights the days either side of a projected period that it could also start or finish on, based on how much your cycles vary.")
+                        .font(.system(size: 12))
+                        .foregroundColor(AppColor.ink.opacity(0.7))
                 }
             }
             .animation(.snappy(duration: 0.2), value: settings.calendarRange)

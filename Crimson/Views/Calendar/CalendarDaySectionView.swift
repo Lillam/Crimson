@@ -11,6 +11,7 @@ enum DayMarking {
     case selected(RangeEdge) // part of the range the user is picking to log
     case period              // actual logged bleeding day
     case predicted           // inside the predicted next-period window
+    case predictedMargin     // either side of it, within the user's usual variation
     case none
     
     /// Where a day sits inside a selected range, so the band can round its
@@ -71,11 +72,13 @@ struct CalendarDaySectionView: View {
                     // logged period days get the strong filled treatment
                     Circle().fill(.red)
                 case .predicted:
-                    // projected days are outlined with a dotted ring, not filled
-                    Circle().strokeBorder(
-                        AppColor.ink.opacity(0.9),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
-                    )
+                    // projected days get a soft wash inside the dotted ring,
+                    // well short of a logged day
+                    projectedCircle(.red.opacity(0.075))
+                case .predictedMargin:
+                    // days the period could shift onto get a different wash,
+                    // so "likely" and "possible" read apart
+                    projectedCircle(.yellow.opacity(0.075))
                 case .none:
                     if isToday {
                         Circle().strokeBorder(AppColor.ink, lineWidth: 1.5)
@@ -98,6 +101,19 @@ struct CalendarDaySectionView: View {
             .animation(.snappy(duration: 0.2), value: isEnabled)
     }
     
+    /// Any day that's a projection rather than a log: a dotted ring, filled
+    /// with `fill` to say how likely it is.
+    private func projectedCircle(_ fill: Color) -> some View {
+        Circle()
+            .fill(fill)
+            .overlay {
+                Circle().strokeBorder(
+                    AppColor.ink.opacity(0.9),
+                    style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
+                )
+            }
+    }
+
     /// The band behind a selected range. It reaches half a column gap either
     /// side so neighbouring cells join up, and stops at the middle of the
     /// start/end cells so the range visibly begins and ends on their circles.
@@ -117,6 +133,7 @@ struct CalendarDaySectionView: View {
         CalendarDaySectionView(date: Date(), marking: .none) {}
         CalendarDaySectionView(date: Date(), marking: .period) {}
         CalendarDaySectionView(date: Date(), marking: .predicted) {}
+        CalendarDaySectionView(date: Date(), marking: .predictedMargin) {}
         CalendarDaySectionView(date: Date(), marking: .selected(.start)) {}
         CalendarDaySectionView(date: Date(), marking: .selected(.middle)) {}
         CalendarDaySectionView(date: Date(), marking: .selected(.end)) {}

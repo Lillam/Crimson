@@ -71,6 +71,7 @@ enum CalendarRange: Equatable {
     private enum Key {
         static let calendarRange = "settings.calendarRange"
         static let theme = "settings.theme"
+        static let showsCalendarVariation = "settings.showsCalendarVariation"
     }
 
     var calendarRange: CalendarRange {
@@ -80,6 +81,13 @@ enum CalendarRange: Equatable {
     /// Light, dark, or whatever the device is set to.
     var theme: AppTheme {
         didSet { defaults.set(theme.rawValue, forKey: Key.theme) }
+    }
+
+    /// Whether the calendar marks the days either side of each projected
+    /// period that it could shift onto, going by how much cycles vary. Off
+    /// unless the user turns it on.
+    var showsCalendarVariation: Bool {
+        didSet { defaults.set(showsCalendarVariation, forKey: Key.showsCalendarVariation) }
     }
 
     init(defaults: UserDefaults = .standard) {
@@ -95,6 +103,9 @@ enum CalendarRange: Equatable {
         // didn't pick.
         theme = defaults.string(forKey: Key.theme)
             .flatMap(AppTheme.init(rawValue:)) ?? .system
+
+        // A missing key reads as false, which is the default we want.
+        showsCalendarVariation = defaults.bool(forKey: Key.showsCalendarVariation)
     }
 
     /// Switches between a bounded and an unbounded calendar, remembering

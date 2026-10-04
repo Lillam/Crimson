@@ -122,8 +122,28 @@ struct CalendarView: View {
         
         return Set(dates.map { calendar.startOfDay(for: $0) })
     }
+    
+    /// The days either side of each projected period it could also land on,
+    /// going by how much the user's cycles vary. Empty until there are two
+    /// cycles to compare, or while the setting is off.
+    private var projectedMarginDays: Set<Date> {
+        guard settings.showsCalendarVariation,
+              let horizon = calendar.dateInterval(of: .month, for: months.last ?? Date())?.end,
+              let variation = store.cycleVariation else {
+            return []
+        }
+        
+        let dates = engine.createProjectionMargins(from: store.stats, variation: variation, for: horizon)
+        
+        return Set(dates.map { calendar.startOfDay(for: $0) })
+    }
 
-    private func marking(for date: Date, logged: Set<Date>, projected: Set<Date>) -> DayMarking {
+    private func marking(
+        for date: Date,
+        logged: Set<Date>,
+        projected: Set<Date>,
+        margins: Set<Date>
+    ) -> DayMarking {
         let day = calendar.startOfDay(for: date)
         
         if let edge = selectionEdge(for: day) {
@@ -136,6 +156,10 @@ struct CalendarView: View {
         
         if projected.contains(day) {
             return .predicted
+        }
+        
+        if margins.contains(day) {
+            return .predictedMargin
         }
         
         return .none
@@ -305,6 +329,7 @@ struct CalendarView: View {
         // Computed once per body evaluation rather than per month or per cell.
         let logged = loggedDays
         let projected = projectedDays
+        let margins = projectedMarginDays
         
         VStack(spacing: 0) {
             HStack(alignment: .top) {
@@ -358,7 +383,7 @@ struct CalendarView: View {
                             CalendarMonthSectionView(
                                 month: month,
                                 marking: {
-                                    marking(for: $0, logged: logged, projected: projected)
+                                    marking(for: $0, logged: logged, projected: projected, margins: margins)
                                 },
                                 isEnabled: isSelectable,
                                 onTap: tapped

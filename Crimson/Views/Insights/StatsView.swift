@@ -17,15 +17,7 @@ struct StatsView: View {
     }
     
     private var cycleVariation: Int? {
-        let lengths = store.cycleLengthHistory.map(\.days)
-        
-        guard let shortest = lengths.min(),
-              let longest = lengths.max(), lengths.count >= 2
-        else {
-            return nil
-        }
-        
-        return Int((Double(longest - shortest) / 2).rounded(.up))
+        store.cycleVariation
     }
     
     let columns = [GridItem(.flexible(), spacing: 20), GridItem(.flexible(), spacing: 20)]

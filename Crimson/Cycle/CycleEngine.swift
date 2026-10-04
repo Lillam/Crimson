@@ -10,21 +10,27 @@ import Foundation
 class CycleEngine {
     private let calendar = Calendar.current
 
-    /// Projects the days the individual is likely to be bleeding, from the most
-    /// recent recorded period up to (and including) `date`.
+    /// Create projects, for the individual that is likely to be bleeding from the most recent recorded
+    /// period up to, and including `date` that's passed.
     ///
-    /// Each future cycle starts `averageCycleLength` days after the previous one,
-    /// and each bleed lasts `averageBleedLength` days. We return every individual
-    /// day inside those future bleed windows so the caller can filter them down to
-    /// whichever month(s) it wants to display.
+    /// Each future cycle starts `averageCycleLength` days after the previous logged record,
+    /// and each bleed lasts `averageBleedLength` days. we're returning every individual day
+    /// inside those future bleed windows so the caller can filter them down to whichever month(s)
+    /// it wants to display.
     ///
-    /// The projection is open-ended: it doesn't matter how long ago the last
-    /// period was logged — the stored averages are applied cycle after cycle
-    /// until the horizon is reached.
+    /// Projections are open-ended: it doesn't matter how long ago the last period was logged,
+    /// the stored averages are applied cycle after cycle until the horizon is reached.
     ///
-    /// This needs a slight alteration where if the range between two dates are too large
-    /// then it needs to defacto back to an average 4 week cycle again as it's too large of
-    /// a gap and no one's cycle is > 2 months on average.
+    /// This needs a slight alteration where if the range between two dates are too large  then it
+    /// needs to defacto bck to an average 4 week cycle again as its' too large of a gap and no
+    /// one's cycle is greater than 2 months on average.
+    ///     There is room to update this at a later date in order to consider these and pause
+    ///     period logging based on situations such as:
+    ///     - Pregnant
+    ///     - Perimenopausal
+    ///     - Menopausal
+    ///     - Taking Birth control.
+    ///     - Anything else that might affect cycle lengths.
     func createProjection(from stats: CycleStats, for date: Date) -> [Date] {
         let bleedLength = max(stats.averageBleedLength, 1)
         let horizon = calendar.startOfDay(for: date)
@@ -50,6 +56,45 @@ class CycleEngine {
         }
 
         return projectedDays
+    }
+
+    /// Create the days either side of each projected bleed that the period could potentially
+    /// land on. If there is a variation we're going to include that variation to give the user a
+    /// wider visibility on when they're likely and most likely to get their period.
+    ///
+    /// The bleed days themselves aren't included, `createProjection` has those days
+    /// already, so the caller can style the likely days and the possible days a little differently
+    /// in the sense of a likely and most likely days.
+    func createProjectionMargins(from stats: CycleStats, variation: Int, for date: Date) -> [Date] {
+        guard variation > 0 else {
+            return []
+        }
+
+        let bleedLength = max(stats.averageBleedLength, 1)
+        let horizon = calendar.startOfDay(for: date)
+        var marginDays: [Date] = []
+
+        for periodStart in projectedPeriodStarts(from: stats) {
+            // The earliest margin day of this cycle is already past the horizon.
+            guard let earliest = calendar.date(byAdding: .day, value: -variation, to: periodStart),
+                      earliest <= horizon else {
+                break
+            }
+
+            let before = (-variation)..<0
+            let after = bleedLength..<(bleedLength + variation)
+
+            for offset in Array(before) + Array(after) {
+                guard let day = calendar.date(byAdding: .day, value: offset, to: periodStart),
+                          day <= horizon else {
+                    continue
+                }
+
+                marginDays.append(day)
+            }
+        }
+
+        return marginDays
     }
 
     /// The first projected period start on or after `date` — i.e. the answer to
