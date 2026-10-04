@@ -24,10 +24,6 @@ struct CalendarSettingsView: View {
             .foregroundColor(AppColor.ink)
             .padding(.top, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
-        Text("How far the calendar scrolls either side of this month. A smaller window is less to draw and less to scroll through.")
-            .font(.system(size: 12))
-            .foregroundColor(AppColor.ink.opacity(0.7))
-            .frame(maxWidth: .infinity, alignment: .leading)
         CardView {
             VStack(alignment: .leading, spacing: 20) {
                 VStack(alignment: .leading) {
@@ -91,6 +87,15 @@ struct CalendarSettingsView: View {
                         }
                     }
                     .font(.system(size: 16))
+                }
+                Divider().overlay(AppColor.ink.opacity(0.3))
+                VStack(alignment: .leading) {
+                    Toggle(isOn: isCalendarUnbounded) {
+                        Text("Ignore Missed Months")
+                            .font(.system(size: 16, weight: .semibold))
+                            .foregroundColor(AppColor.ink)
+                    }
+                    .tint(.green)
                 }
             }
             .animation(.snappy(duration: 0.2), value: settings.calendarRange)

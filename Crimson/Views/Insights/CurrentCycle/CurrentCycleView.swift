@@ -50,7 +50,7 @@ struct CurrentCycleView: View {
                     .font(.system(size: 13))
                     .foregroundColor(AppColor.ink.opacity(0.75))
                     
-                    Text("Ovulation estimated day \(position.ovulationDay) · fertile days \(position.fertileDays.lowerBound)–\(position.fertileDays.upperBound). Estimates from your averages, not measurements.")
+                    Text("Ovulation estimated day \(position.ovulationDay) · fertile days \(position.ovulationDays.lowerBound)–\(position.ovulationDays.upperBound). Estimates from your averages, not measurements.")
                     .font(.system(size: 11))
                     .foregroundColor(AppColor.ink.opacity(0.55))
                 }

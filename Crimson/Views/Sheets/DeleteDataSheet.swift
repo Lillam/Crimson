@@ -87,19 +87,27 @@ struct DeleteDataSheet: View {
         deleteCycleData()
         deleteProfileData()
     }
-    
+
+    /// clear the day log data; this will remove every entry stored, locally in the database on the
+    /// user's machine. This won't be reversible and will be completely destructive...
     private func deleteDayLogData() -> Void {
-        print("day log data deleted...")
+        dayLogStore.clear()
+        /// todo -> add an alert that pops up letting the user know that the action has been done.
     }
     
+    /// Clear the cycle data; this will remove every entry stored for their cycles, these are stored
+    /// locally in the database on the user's machine. This won't be reversible and will be
+    /// completely destructive.
     private func deleteCycleData() -> Void {
-        print("cycle data deleted...")
+        cycleStore.clear()
+        /// todo -> add an alert that pops up letting the user know that the action has been done.
     }
     
     private func deleteProfileData() -> Void {
         // Removing the row is what makes the welcome ask again — there's no
         // separate flag to reset.
         profileStore.deleteProfile()
+        /// todo -> add an alert that pops up letting the user know that the action has been done.
     }
 }
 

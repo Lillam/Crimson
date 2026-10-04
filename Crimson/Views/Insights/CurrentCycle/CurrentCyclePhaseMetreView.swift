@@ -55,7 +55,7 @@ struct CurrentCyclePhaseMetreView: View {
                 HStack(spacing: gap) {
                     ForEach(CyclePhase.allCases, id: \.self) { phase in
                         let isCurrent = phase == position.phase && !isLate
-                        Text(phase == .fertile ? "Fertile" : phase.title)
+                        Text(phase == .ovulation ? "Ovulation" : phase.title)
                             .font(.system(size: 10, weight: isCurrent ? .semibold : .regular))
                             .foregroundColor(AppColor.ink.opacity(isCurrent ? 1 : 0.6))
                             .lineLimit(1)

@@ -48,7 +48,7 @@ struct PhaseView: View {
             switch position.phase {
             case .menstrual: MenstrualPhaseSheet(phase: position.phase)
             case .follicular: FollicularPhaseSheet(phase: position.phase)
-            case .fertile: OvulationPhaseSheet(phase: position.phase)
+            case .ovulation: OvulationPhaseSheet(phase: position.phase)
             case .luteal: LutealPhaseSheet(phase: position.phase)
             }
         }

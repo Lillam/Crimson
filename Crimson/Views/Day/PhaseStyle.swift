@@ -24,7 +24,7 @@ extension CyclePhase {
         switch self {
         case .menstrual:  Color(.red).opacity(0.85)
         case .follicular: Color(.magenta)
-        case .fertile:    Color(.purple)
+        case .ovulation:  Color(.purple)
         case .luteal:     Color(.indigo)
         }
     }

@@ -127,13 +127,13 @@ class CycleEngine {
 }
 
 enum CyclePhase: CaseIterable {
-    case menstrual, follicular, fertile, luteal
+    case menstrual, follicular, ovulation, luteal
     
     var title: String {
         switch self {
         case .menstrual:  "Menstrual"
         case .follicular: "Follicular"
-        case .fertile:    "Fertile window"
+        case .ovulation:  "Ovulation"
         case .luteal:     "Luteal"
         }
     }
@@ -143,7 +143,7 @@ enum CyclePhase: CaseIterable {
         switch self {
         case .menstrual:  "Your period. Energy is often lowest around now."
         case .follicular: "Post-period. Energy and mood tend to climb."
-        case .fertile:    "The days around estimated ovulation."
+        case .ovulation:  "The days around estimated ovulation."
         case .luteal:     "Pre-period. PMS symptoms are most common here."
         }
     }
@@ -163,14 +163,16 @@ struct CyclePosition {
     }
     
     var menstrualDays: ClosedRange<Int> { 1...bleedLength }
-    var fertileDays: ClosedRange<Int> { max(ovulationDay - 5, bleedLength + 1)...min(ovulationDay + 1, cycleLength) }
+    var ovulationDays: ClosedRange<Int> {
+        max(ovulationDay - 5, bleedLength + 1)...min(ovulationDay + 1, cycleLength)
+    }
     
     var phase: CyclePhase {
         switch day {
-        case menstrualDays: .menstrual
-        case fertileDays:   .fertile
-        case ..<fertileDays.lowerBound: .follicular
-        default: .luteal
+        case menstrualDays:               .menstrual
+        case ovulationDays:               .ovulation
+        case ..<ovulationDays.lowerBound: .follicular
+        default:                          .luteal
         }
     }
     
@@ -183,9 +185,9 @@ struct CyclePosition {
     func days(in phase: CyclePhase) -> ClosedRange<Int> {
         switch phase {
         case .menstrual:  menstrualDays
-        case .follicular: (bleedLength + 1)...max(fertileDays.lowerBound - 1, bleedLength + 1)
-        case .fertile:    fertileDays
-        case .luteal:     min(fertileDays.upperBound + 1, cycleLength)...cycleLength
+        case .follicular: (bleedLength + 1)...max(ovulationDays.lowerBound - 1, bleedLength + 1)
+        case .ovulation:  ovulationDays
+        case .luteal:     min(ovulationDays.upperBound + 1, cycleLength)...cycleLength
         }
     }
 }

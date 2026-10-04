@@ -22,7 +22,7 @@ struct LutealPhaseSheet: View {
                     .font(.system(size: 30, weight: .bold))
                 Text("This is the fourth and final phase in your cycle, which comes after ovulation. The empty follicle turns into a corpus luteum. The cells of a corpus luteum produces oestrogen along with large amounts of progesterone. Progesterone stimulates your uterine lining to prepare for a fertilised egg.")
                 Text("During this phase, one of two things can happen. You either become pregnant, to which the egg moves into your uterus and attaches itself to the lining that was prepared or if you're not pregnant, the lining of the uterus then sheds through the vaginal opening. Your period starts and a new menstrual cycle begins.")
-                Text("During this phase, many women face pre-menstrual syndrom, precipitated by mood swings which is caused by a drop in oestrogen and progesterone. You may also face other symptoms such like cravings, fatigue, increased anxiety and depression.")
+                Text("During this phase, many women face pre-menstrual syndrome, precipitated by mood swings which is caused by a drop in oestrogen and progesterone. You may also face other symptoms such like cravings, fatigue, increased anxiety and depression.")
                     
             }
             .frame(maxWidth: .infinity, alignment: .leading)

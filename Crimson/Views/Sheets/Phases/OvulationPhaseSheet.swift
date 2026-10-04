@@ -37,5 +37,5 @@ struct OvulationPhaseSheet: View {
 }
 
 #Preview {
-    OvulationPhaseSheet(phase: .fertile)
+    OvulationPhaseSheet(phase: .ovulation)
 }

@@ -60,6 +60,10 @@ import SwiftData
     func clear() {
         do {
             try context.delete(model: Model.self)
+            // after the data has been cleared, then we can
+            // reload the user's data making sure that the
+            // views are updated.
+            reload()
         } catch {
             assertionFailure("Could not clear the store: [\(Model.self)] \(error)")
         }

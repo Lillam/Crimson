@@ -22,7 +22,7 @@ struct MenstrualPhaseSheet: View {
                     .font(.system(size: 30, weight: .bold))
                 Text("This is the first phase, most commonly referred to as 'your period' The official start of your cycle, is the first day of your menstrual phase.")
                 Text("Menstrual blood is shed from the lining of your uterus, going from your uterus, to your cervix and vagina, lastly through your vagina opening (my condolences) - Menstruation usually lasts about three to seven days. Despite it seeming like more your entire period is roughly around 35ml. Generally, you may experience discomfort as your uterus contracts to shed its' lining.")
-                Text("With the hormonal changes related to the menstruation phase, some women may find that their breasts to ache, shifts in mood, acne or migraines become more severe.")
+                Text("With the hormonal changes related to the menstruation phase, some women may find that their breasts ache, have shifts in mood, get acne or their migraines become more severe.")
                 Text("Although it may not help everyone, this can be helped with over-the-counter anti-inflammatories or a heating pad.")
             }
             .foregroundColor(.white)
